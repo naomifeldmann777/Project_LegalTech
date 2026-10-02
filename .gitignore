@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+output/
+.DS_Store
+~$*.docx
+.venv/
