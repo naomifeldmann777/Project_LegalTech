@@ -1,4 +1,13 @@
-streamlit
-pyyaml
-docxtpl
-pytest
+# requirements.txt - the Python libraries of the Construction Contract Generator
+# -----------------------------------------------------------------------------
+# Install them with:  pip install -r requirements.txt
+# Streamlit Community Cloud reads this file automatically when it deploys the app.
+# Every version is pinned (==) to the version the project was built and tested
+# with (Python 3.12), so that every team member and the cloud get the same result.
+# -----------------------------------------------------------------------------
+streamlit==1.64.0        # the web user interface (app.py)
+PyYAML==6.0.3            # reads the YAML files in data/ and tests/scenarios/
+docxtpl==0.20.2          # fills the Word template (generator.py)
+python-docx==1.2.0       # builds the Word template (templates/make_template.py); also used by docxtpl and the tests
+Jinja2==3.1.6            # the {{ gap }} language of docxtpl; generator.py uses StrictUndefined from it
+pytest==9.1.1            # runs the automatic tests in tests/
