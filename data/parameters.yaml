@@ -1,0 +1,292 @@
+# =============================================================================
+# parameters.yaml - the questions of the questionnaire (all input fields)
+# -----------------------------------------------------------------------------
+# What this file is for:
+#   It lists every input field the user fills in: its ID, data type, allowed
+#   answers, question text, help text, and when it is shown and required.
+# How it fits into the project:
+#   - app.py builds the questionnaire from this file; the order of the fields
+#     below is the order of the questions on the screen.
+#   - engine.py uses "active_when" to ignore inactive answers (handoff App. B,
+#     "Inactive inputs are ignored") and uses "required" for rule R_REQUIRED.
+#   - rules.yaml refers to the field IDs below.
+#   - The field IDs are also the placeholder names in the clauses and in the
+#     Word template, e.g. {contract_price} and {{ client_name }}.
+# Which documents it implements:
+#   - Legal handoff Appendix B: fields, data types, allowed values, question texts
+#   - Law packet (Legal_Todo_Responses_EN) Task 3: help texts
+#   - Law packet Task 4: answer "other" of work_category
+#   - Law packet Task 5: the 5 fields of the contract skeleton
+#   - Contract skeleton (Construction_Contract_Skeleton_EN): fields used by the template
+#   - Diagrams PDF chapter 8: ER entity PARAMETER
+# Decisions used (IDs from the team's decision list): D2, D13, D14, D15, D16, D22, D30.
+# Left out on purpose in iteration 1 (D2): client_owns_site,
+#   contract_conclusion_channel, personal_contract_required and all fields of topics 2-5.
+# Missing vs. no: an unanswered field is None (null); false is an answered "no" (App. B).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Questionnaire sections: the blocks of the questionnaire, in this order.
+# -----------------------------------------------------------------------------
+sections:
+  - id: scope                                 # section ID; the fields below point to it
+    title: "Scope check"                      # heading shown in the app (diagrams PDF ch. 1, step 1)
+  - id: parties_works                         # parties, site, Works and annexes
+    title: "Parties and Works"                # proposed heading
+  - id: price_payment                         # topic 1
+    title: "Price and payment"                # topic name from handoff note sheet 1
+  - id: signature                             # who signs for the Contractor
+    title: "Signature"                        # proposed heading
+
+# -----------------------------------------------------------------------------
+# Fields (ER entity PARAMETER), in questionnaire order.
+# Possible data types ("type"):
+#   date            a calendar date
+#   enum            one answer from a fixed list ("allowed_values")
+#   boolean         yes / no
+#   text            one line of text
+#   long_text       several lines of text
+#   decimal_chf     an amount of money in CHF (Decimal, never float)
+#   decimal_percent a percentage (Decimal)
+#   integer         a whole number
+#   list            a table with several rows; its columns are listed under "columns"
+# -----------------------------------------------------------------------------
+fields:
+
+  # ===== Section "Scope check" =================================================
+
+  # --- contract_date (App. B) -------------------------------------------------
+  - id: contract_date                         # field ID = placeholder name; never change it
+    section: scope                            # questionnaire section (ID from "sections")
+    type: date                                # data type (see list above)
+    question: "When will the contract be concluded?"  # question text, copied from App. B
+    # help text shown with the question (optional key, decision D15), copied from law packet Task 3
+    help_text: "Enter the date on which the Parties intend to conclude the contract. This prototype supports new contracts from 1 January 2026."
+    required: true                            # must be answered whenever the field is active
+    # no "active_when" key = the field is always active (always shown)
+    # a missing date is reported by R_REQUIRED, a date before 2026 by R_SCOPE (D16)
+
+  # --- work_category (App. B, law packet Task 4) ------------------------------
+  - id: work_category                         # field ID
+    section: scope                            # questionnaire section
+    type: enum                                # one answer from the list below
+    question: "Is this work on an immovable residential building in Switzerland?"  # App. B
+    allowed_values:                           # the answers the user can choose (enum fields only)
+      - value: immovable_residential_building # stored value, copied from App. B (the only supported one)
+        label: "Immovable residential building works in Switzerland"  # text shown in the app; proposed, words taken from the law packet Task 3 help text
+      - value: other                          # stored value, decision D14 / law packet Task 4
+        label: "Other work or unsure about the category"  # copied from law packet Task 4
+    help_text: "Choose the type of work. This prototype supports immovable residential building works in Switzerland only. Choosing Other does not assess another type of contract."  # law packet Task 3
+    required: true                            # always required
+    checked_by: R_SCOPE                       # this rule, not R_REQUIRED, reports a missing or unsupported answer (D16)
+
+  # --- scope_confirmed (App. B) -----------------------------------------------
+  - id: scope_confirmed                       # field ID
+    section: scope                            # questionnaire section
+    type: boolean                             # yes / no; starts unanswered (None), false is a valid answer
+    question: "Confirm: one Contractor, natural-person Client acting privately, no SIA 118 incorporation or general-contractor structure."  # App. B
+    help_text: "Confirm one Contractor and one private natural-person Client, with no SIA 118 incorporation, public procurement or general-contractor structure. Do not confirm if unsure."  # law packet Task 3
+    required: true                            # always required; only "true" lets the user continue
+    checked_by: R_SCOPE                       # missing or false is reported by R_SCOPE (D16)
+
+  # ===== Section "Parties and Works" ==========================================
+  # App. B gives one question for all party fields ("Who are the parties and what
+  # result must be delivered?"), so each field below has a short proposed label.
+
+  # --- client_name (App. B) ---------------------------------------------------
+  - id: client_name                           # field ID; also {{ client_name }} in the skeleton
+    section: parties_works                    # questionnaire section
+    type: text                                # one line of text
+    question: "Client name"                   # proposed label
+    help_text: "Enter the full legal name of the person ordering and paying for the Works."  # law packet Task 3
+    required: true                            # always required
+
+  # --- client_address (App. B "addresses", decision D13) -----------------------
+  - id: client_address                        # field ID; the law packet calls it "addresses.client"
+    section: parties_works                    # questionnaire section
+    type: long_text                           # several lines (street, postcode, town)
+    question: "Client address"                # proposed label
+    help_text: "Enter the Client postal address. The Works site may be elsewhere."  # law packet Task 3 ("addresses.client")
+    required: true                            # always required
+
+  # --- contractor_name (App. B) -----------------------------------------------
+  - id: contractor_name                       # field ID
+    section: parties_works                    # questionnaire section
+    type: text                                # one line of text
+    question: "Contractor name"               # proposed label
+    help_text: "Enter the Contractor legal name. A company name and the name of the person signing for it may differ."  # law packet Task 3
+    required: true                            # always required
+
+  # --- contractor_address (App. B "addresses", decision D13) -------------------
+  - id: contractor_address                    # field ID; the law packet calls it "addresses.contractor"
+    section: parties_works                    # questionnaire section
+    type: long_text                           # several lines
+    question: "Contractor address"            # proposed label
+    help_text: "Enter the Contractor postal address. Keep the Client address separate."  # law packet Task 3 ("addresses.contractor")
+    required: true                            # always required
+
+  # --- site_address (skeleton section 2, law packet Task 5) --------------------
+  - id: site_address                          # field ID; {{ site_address }} in the skeleton
+    section: parties_works                    # questionnaire section
+    type: long_text                           # several lines
+    question: "What is the address or precise location of the Works?"  # law packet Task 5
+    required: true                            # law packet Task 5: required; missing = R_REQUIRED
+
+  # --- work_description (App. B, skeleton section 2) ---------------------------
+  - id: work_description                      # field ID
+    section: parties_works                    # questionnaire section
+    type: long_text                           # several lines
+    question: "Description of the Works and agreed result"  # label copied from skeleton section 2
+    help_text: "Describe the agreed result, location, extent and material specifications clearly. Use technical annexes where useful; do not insert extra legal conditions here."  # law packet Task 3
+    required: true                            # always required
+
+  # --- exclusions_and_client_supplies (skeleton section 2, law packet Task 5) --
+  - id: exclusions_and_client_supplies        # field ID
+    section: parties_works                    # questionnaire section
+    type: long_text                           # several lines
+    question: "Which work is excluded, and which materials or items will the Client supply?"  # law packet Task 5
+    required: false                           # optional (law packet Task 5)
+    # text printed in the contract when the field is left empty (optional key), copied from law packet Task 5
+    if_empty_print: "No separate list of exclusions or Client-supplied items is recorded in this document."
+
+  # --- annex_register (skeleton section 3, law packet Task 5) ------------------
+  - id: annex_register                        # field ID
+    section: parties_works                    # questionnaire section
+    type: list                                # a table: one row per technical annex
+    question: "Which technical annexes form part of the contract?"  # law packet Task 5
+    required: false                           # the list may be empty; an incomplete row is an R_REQUIRED error (D16)
+    # no "if_empty_print" here: when the list is empty, the Word template replaces the annex
+    # wording of skeleton sections 2, 3 and 13 instead (law colleague's answer 2, step 14)
+    columns:                                  # the columns of each row (list fields only)
+      - id: title                             # column ID
+        type: text                            # data type of the column
+        question: "Title"                     # proposed column label
+        required: true                        # law packet Task 5: non-empty title
+      - id: date                              # column ID
+        type: date                            # law packet Task 5: ISO date
+        question: "Date"                      # proposed column label
+        required: true                        # every listed annex needs a date
+      - id: revision                          # column ID
+        type: text                            # revision identifier, e.g. "A"
+        question: "Revision"                  # proposed column label
+        default: "Original"                   # value filled in for a new row (optional key)
+        help_text: "Use Original where no revision identifier exists."  # adapted from law packet Task 5
+        required: true                        # every listed annex needs a revision
+
+  # ===== Section "Price and payment" (topic 1) ================================
+
+  # --- price_type (App. B) ----------------------------------------------------
+  - id: price_type                            # field ID
+    section: price_payment                    # questionnaire section
+    type: enum                                # one answer from the list below
+    question: "Is the price fixed or an estimate?"  # App. B
+    allowed_values:                           # allowed answers (App. B: fixed / estimate)
+      - value: fixed                          # stored value; selects PRICE_FIXED
+        label: "Fixed price"                  # review title from law packet Task 8
+      - value: estimate                       # stored value; selects PRICE_ESTIMATE
+        label: "Estimated price"              # review title from law packet Task 8
+    help_text: "Fixed means an agreed total for unchanged Works. Estimate means an approximate total calculated under the stated pricing basis, not a maximum price."  # law packet Task 3
+    required: true                            # always required
+
+  # --- contract_price (App. B) ------------------------------------------------
+  - id: contract_price                        # field ID
+    section: price_payment                    # questionnaire section
+    type: decimal_chf                         # money in CHF
+    decimals: 2                               # decimal places allowed (CHF cents; optional key for numbers)
+    question: "What is the fixed total or approximate estimate?"  # App. B; shown while price_type is not answered
+    question_depends_on: price_type           # App. B: "Label changes with price_type" (optional key)
+    question_variants:                        # question shown for each answer of price_type
+      fixed: "What is the fixed total?"       # proposed: first half of the App. B question
+      estimate: "What is the approximate estimate?"  # proposed: second half of the App. B question
+    help_text: "Enter the fixed total or approximate estimated total in CHF. Include applicable VAT when VAT is charged. The prototype requires a positive amount; this is a product rule."  # law packet Task 3
+    required: true                            # missing = R_REQUIRED; zero or negative = R_PRICE (D16)
+
+  # --- vat_treatment (App. B) -------------------------------------------------
+  - id: vat_treatment                         # field ID
+    section: price_payment                    # questionnaire section
+    type: enum                                # one answer from the list below
+    question: "Does that amount include applicable VAT, or is no VAT charged?"  # App. B
+    allowed_values:                           # allowed answers (App. B: included / not_charged)
+      - value: included                       # stored value
+        label: "This amount includes applicable VAT"  # from the App. D vat_treatment_text wording
+      - value: not_charged                    # stored value
+        label: "No VAT is charged on this amount"     # from the App. D vat_treatment_text wording
+    help_text: "Choose whether the stated amount includes applicable VAT or no VAT is charged. The tool does not determine tax liability or add a tax rate."  # law packet Task 3
+    required: true                            # always required (missing = R_REQUIRED)
+
+  # --- estimate_basis (App. B) ------------------------------------------------
+  - id: estimate_basis                        # field ID
+    section: price_payment                    # questionnaire section
+    type: long_text                           # several lines
+    question: "How will the estimate be priced, including labour, materials and expenses?"  # App. B
+    help_text: "Explain the pricing method, for example labour hours at an agreed hourly rate plus evidenced materials and expenses. State rates, quantities or agreed mark-ups where relevant."  # law packet Task 3
+    # the field is only shown and used when this condition is true (structured YAML format, decision D6)
+    active_when: {field: price_type, op: equals, value: estimate}
+    required: true                            # required while active
+    checked_by: R_PRICE                       # a missing basis is reported by R_PRICE, not R_REQUIRED (D16)
+
+  # --- payment_type (App. B) --------------------------------------------------
+  - id: payment_type                          # field ID
+    section: price_payment                    # questionnaire section
+    type: enum                                # one answer from the list below
+    question: "Pay on delivery or in milestones?"  # App. B
+    allowed_values:                           # allowed answers (App. B: on_completion / milestones)
+      - value: on_completion                  # stored value (keeps the plan ID; means payment on delivery)
+        label: "Payment on delivery"          # review title from law packet Task 8
+      - value: milestones                     # stored value
+        label: "Milestone payments"           # review title from law packet Task 8
+    help_text: "On delivery follows the CO 372 baseline. Milestones use agreed stages. An interim or advance payment does not itself approve the Works or waive defect rights."  # law packet Task 3
+    required: true                            # always required
+
+  # --- milestones (App. B "Milestone records") ---------------------------------
+  - id: milestones                            # field ID
+    section: price_payment                    # questionnaire section
+    type: list                                # a table: one row per milestone
+    question: "Payment milestones"            # proposed label (App. B only lists the columns)
+    help_text: "List the payment stages in order. Percentages must total exactly 100. Under an estimate, scheduled amounts are provisional payments on account of the final price."  # law packet Task 3
+    active_when: {field: payment_type, op: equals, value: milestones}  # only shown for milestone payments
+    required: true                            # at least one row while active (D22)
+    checked_by: R_PAY                         # every milestone problem is reported by R_PAY (D16)
+    columns:                                  # the 5 columns of App. B "Milestone records"
+      - id: name                              # column ID (App. B)
+        type: text                            # non-empty text
+        question: "Name"                      # proposed column label
+        help_text: "Use a short identifiable stage name, for example Roofing completed."  # law packet Task 3
+        required: true                        # App. B: non-empty
+      - id: trigger                           # column ID (App. B)
+        type: text                            # non-empty text
+        question: "Trigger"                   # proposed column label
+        help_text: "Describe an observable event that makes this instalment payable. For pre-performance funding, state explicitly that payment is required before the corresponding work starts."  # law packet Task 3
+        required: true                        # App. B: non-empty
+      - id: percent                           # column ID (App. B)
+        type: decimal_percent                 # App. B: > 0 and <= 100; all rows total exactly 100
+        decimals: 2                           # up to 2 decimal places, e.g. 33.33 (D22)
+        question: "Percent"                   # proposed column label
+        help_text: "Enter the share of the schedule base. Each percentage must be positive and all rows must total exactly 100. Cent allocation must also produce positive payments."  # law packet Task 3
+        required: true                        # every row needs a percentage
+      - id: invoice_due_days                  # column ID (App. B)
+        type: integer                         # App. B: non-negative whole number
+        question: "Invoice due days"          # proposed column label
+        help_text: "Enter a non-negative whole number of calendar days after invoice receipt. Payment is due only after both this period and the stated trigger are satisfied. Zero adds no invoice waiting period."  # law packet Task 3
+        required: true                        # every row needs a number (0 is allowed)
+      - id: advance                           # column ID (App. B)
+        type: boolean                         # starts unanswered (None); false is a valid answer
+        question: "Advance payment?"          # proposed column label
+        help_text: "Does this instalment become payable before its corresponding work is performed? This differs from an estimated-price interim payment on account of the final price."  # law packet Task 3
+        required: true                        # law packet Task 9: advance must be answered
+
+  # ===== Section "Signature" ==================================================
+
+  # --- contractor_signatory_name (skeleton section 13, law packet Task 5) ------
+  - id: contractor_signatory_name             # field ID
+    section: signature                        # questionnaire section
+    type: text                                # one line of text
+    question: "Who will sign for the Contractor?"  # law packet Task 5
+    required: true                            # law packet Task 5: required; missing = R_REQUIRED
+
+  # --- contractor_signatory_capacity (skeleton section 13, law packet Task 5) --
+  - id: contractor_signatory_capacity         # field ID
+    section: signature                        # questionnaire section
+    type: text                                # one line of text, e.g. "Managing director"
+    question: "In what capacity will that person sign?"  # law packet Task 5
+    required: true                            # law packet Task 5: required; missing = R_REQUIRED
