@@ -1,0 +1,14 @@
+# =============================================================================
+# .streamlit/config.toml - colours of the Streamlit app (app.py)
+# -----------------------------------------------------------------------------
+# Streamlit reads this file automatically when the app starts (streamlit run app.py)
+# and on Streamlit Community Cloud. Colours are written as hex codes (#RRGGBB).
+# Red error and yellow warning boxes keep Streamlit's own colours.
+# =============================================================================
+
+[theme]                                  # the colour theme of the app
+base = "light"                           # start from Streamlit's light theme
+backgroundColor = "#F7F5F0"              # page background: calm, warm off-white (like paper)
+secondaryBackgroundColor = "#E9E3D6"     # sidebar, input fields and boxes: light beige
+primaryColor = "#1F4E79"                 # buttons, links and selected options: dark blue (like the project PDFs)
+textColor = "#1A1A1A"                    # text: almost black, easy to read on the light background
