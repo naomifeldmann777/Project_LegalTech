@@ -1,0 +1,17 @@
+# =============================================================================
+# P1.yaml - test scenario P1: the basic project (similar to handoff E1)
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P1); handoff App. E (E1).
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# How it is used: tests/test_scenarios.py takes base_project.yaml, applies the
+#   "answers" below, runs the engine and compares the result with "expected".
+# =============================================================================
+
+id: P1                                        # scenario ID, same as the file name
+title: "Basic project: fixed price, payment on delivery"  # short description for the test report
+answers: {}                                   # what differs from base_project.yaml: nothing
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error, "Generate" allowed
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION]  # selected clauses, in contract order
+  errors: []                                  # rule IDs of the errors (compared as a set)
+  warnings: [W_CONSUMER]                      # rule IDs of the warnings (compared as a set)

@@ -1,0 +1,20 @@
+# =============================================================================
+# P10.yaml - test scenario P10: vat_treatment not answered
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P10); handoff App. B (vat_treatment always required;
+# not shown in the topic 1 flowchart, so R_REQUIRED covers it).
+# Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P10                                       # scenario ID
+title: "vat_treatment missing"                # description
+answers:                                      # what differs from base_project.yaml
+  vat_treatment: null                         # not answered
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_REQUIRED]                        # a required field is missing
+  error_fields:                               # where the error is shown
+    R_REQUIRED: [vat_treatment]               # next to the VAT question
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

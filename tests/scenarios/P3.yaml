@@ -1,0 +1,23 @@
+# =============================================================================
+# P3.yaml - test scenario P3: milestones 30 / 30 / 30 do not add up to 100 (= handoff E4)
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P3); handoff App. E (E4: "R_PAY blocks; total is 90").
+# Warnings with errors: decision Q6 (warnings are still shown).
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P3                                        # scenario ID
+title: "Milestones 30/30/30 (total 90)"       # description
+answers:                                      # what differs from base_project.yaml
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # three rows that only add up to 90 %
+    - {name: "Stage 1", trigger: "Foundations completed", percent: "30", invoice_due_days: 30, advance: false}
+    - {name: "Stage 2", trigger: "Roof is closed", percent: "30", invoice_due_days: 30, advance: false}
+    - {name: "Stage 3", trigger: "Works delivered", percent: "30", invoice_due_days: 30, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses when there is an error (D17)
+  errors: [R_PAY]                             # the schedule is invalid
+  error_fields:                               # where each error is shown (optional key): rule ID -> fields
+    R_PAY: [milestones]                       # next to the milestone table
+  warnings: [W_CONSUMER]                      # still shown (Q6)

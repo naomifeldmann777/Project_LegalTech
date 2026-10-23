@@ -1,0 +1,19 @@
+# =============================================================================
+# P11.yaml - test scenario P11: estimate with a pricing basis, payment on delivery
+# -----------------------------------------------------------------------------
+# Source: law packet REF02 (added as P11, decision R7).
+# Expected result: from the law packet; NOT YET CONFIRMED by the law student (L11).
+# =============================================================================
+
+id: P11                                       # scenario ID
+title: "Estimate with a pricing basis, payment on delivery (REF02)"  # description
+answers:                                      # what differs from base_project.yaml
+  price_type: estimate                        # estimated price
+  estimate_basis: "Labour at CHF 95 per hour plus evidenced materials and expenses"  # pricing basis
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_ESTIMATE, PAYMENT_ON_COMPLETION]  # REF02
+  errors: []                                  # no errors
+  warnings: [W_PRICE, W_CONSUMER]             # REF02: W_PRICE and W_CONSUMER
+  contract_text_contains:                     # the basis is put into the clause
+    - "using the agreed pricing basis: Labour at CHF 95 per hour plus evidenced materials and expenses."  # PRICE_ESTIMATE

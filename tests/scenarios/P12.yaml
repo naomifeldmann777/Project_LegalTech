@@ -1,0 +1,22 @@
+# =============================================================================
+# P12.yaml - test scenario P12: fixed price, two 50 % milestones after completed work
+# -----------------------------------------------------------------------------
+# Source: law packet REF03 (added as P12, decision R7).
+# Expected result: from the law packet; NOT YET CONFIRMED by the law student (L11).
+# =============================================================================
+
+id: P12                                       # scenario ID
+title: "Fixed price, two 50% milestones, 14 days to pay (REF03)"  # description
+answers:                                      # what differs from base_project.yaml
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # both paid after the work stage is done (no advance)
+    - {name: "Shell completed", trigger: "Shell construction completed", percent: "50", invoice_due_days: 14, advance: false}
+    - {name: "Works delivered", trigger: "Works delivered to the Client", percent: "50", invoice_due_days: 14, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_FIXED, PAYMENT_MILESTONE]   # REF03
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER]                      # REF03: no advance, so no W_PRICE
+  contract_text_contains:                     # CHF 50,000 each, 14 days
+    - "Instalment: CHF 50,000.00 | Invoice period: 14 calendar days after receipt"  # row wording
+    - "No pre-performance advance: this instalment follows the stated performance trigger."  # advance label

@@ -1,0 +1,24 @@
+# =============================================================================
+# P8.yaml - test scenario P8: rounding, CHF 99,999.99 split 50 / 50
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P8); handoff App. B (last instalment = balance);
+# decision D23 / Q5 (round half-up): 49,999.995 -> 50,000.00, last = 49,999.99.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P8                                        # scenario ID
+title: "Rounding: CHF 99,999.99 with milestones 50/50"  # description
+answers:                                      # what differs from base_project.yaml
+  contract_price: "99999.99"                  # an odd price
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # two halves
+    - {name: "First half", trigger: "Roof is closed", percent: "50", invoice_due_days: 30, advance: false}
+    - {name: "Second half", trigger: "Works delivered", percent: "50", invoice_due_days: 30, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_FIXED, PAYMENT_MILESTONE]   # selected clauses
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER]                      # no advance, so no W_PRICE
+  contract_text_contains:                     # the two instalments add up exactly to 99,999.99
+    - "1. First half | Trigger: Roof is closed | Share of fixed price: 50% | Instalment: CHF 50,000.00"   # rounded half-up
+    - "2. Second half | Trigger: Works delivered | Share of fixed price: 50% | Instalment: CHF 49,999.99"  # the balance

@@ -1,0 +1,32 @@
+# =============================================================================
+# P6.yaml - test scenario P6: estimate with milestones and an advance, plus stale penalty values (similar to E8)
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P6); handoff App. E (E8); law packet REF04.
+# The penalty answers belong to topic 2, which is not in iteration 1: the engine
+# must ignore them (handoff App. B "Inactive inputs are ignored", decision D26).
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P6                                        # scenario ID
+title: "Estimate, milestones with an advance, stale penalty values"  # description
+answers:                                      # what differs from base_project.yaml
+  price_type: estimate                        # estimated price
+  estimate_basis: "Labour at CHF 95 per hour plus evidenced materials and expenses"  # pricing basis
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # first milestone is paid before the work (advance)
+    - {name: "Deposit", trigger: "Contract signed, before work starts", percent: "20", invoice_due_days: 10, advance: true}
+    - {name: "Shell construction", trigger: "Roof is closed", percent: "40", invoice_due_days: 30, advance: false}
+    - {name: "Handover", trigger: "Works delivered", percent: "40", invoice_due_days: 30, advance: false}
+  delay_penalty: false                        # stale topic 2 answer: no penalty ...
+  penalty_amount: "700"                       # ... but old values are still there
+  penalty_period: week                        # old value
+  penalty_cap: "5"                            # old value
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_ESTIMATE, PAYMENT_MILESTONE]  # handoff E8
+  errors: []                                  # the stale penalty values cause no error
+  warnings: [W_PRICE, W_CONSUMER]             # W_PRICE twice (estimate + advance), compared as a set
+  ignored_fields: [delay_penalty, penalty_amount, penalty_period, penalty_cap]  # answers the engine ignored (optional key)
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "Provisional payment on account: CHF 20,000.00"  # estimate row wording (law packet page 7)
+    - "These are advances against the final price."    # reconciliation text for an estimate (App. D)

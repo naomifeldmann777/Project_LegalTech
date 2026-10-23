@@ -1,0 +1,25 @@
+# =============================================================================
+# P2.yaml - test scenario P2: fixed price with milestones 20 / 40 / 40, first one an advance
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P2).
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P2                                        # scenario ID
+title: "Fixed price, milestones 20/40/40, first milestone an advance"  # description
+answers:                                      # what differs from base_project.yaml
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # the milestone table, one row per milestone
+    - {name: "Deposit", trigger: "Contract signed", percent: "20", invoice_due_days: 10, advance: true}  # advance
+    - {name: "Shell construction", trigger: "Roof is closed", percent: "40", invoice_due_days: 30, advance: false}
+    - {name: "Handover", trigger: "Works delivered", percent: "40", invoice_due_days: 30, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_FIXED, PAYMENT_MILESTONE]   # selected clauses
+  errors: []                                  # no errors
+  warnings: [W_PRICE, W_CONSUMER]             # W_PRICE because of the advance payment
+  contract_text_contains:                     # texts that must appear in the filled clauses (optional key)
+    - "Instalment: CHF 20,000.00"             # 20 % of CHF 100,000.00
+    - "3. Handover | Trigger: Works delivered | Share of fixed price: 40% | Instalment: CHF 40,000.00"  # last row
+    - "Pre-performance advance: payable before the corresponding work is performed."  # advance label of row 1
+    - "The schedule allocates the fixed price."  # reconciliation text for a fixed price

@@ -1,0 +1,21 @@
+# =============================================================================
+# P13.yaml - test scenario P13: milestones add up to 99.99 %
+# -----------------------------------------------------------------------------
+# Source: law packet REF07 (added as P13, decision R7): "Decimal total is not 100".
+# Expected result: from the law packet; NOT YET CONFIRMED by the law student (L11).
+# =============================================================================
+
+id: P13                                       # scenario ID
+title: "Milestones total 99.99% (REF07)"      # description
+answers:                                      # what differs from base_project.yaml
+  payment_type: milestones                    # milestone payments
+  milestones:                                 # 49.99 + 50 = 99.99, not exactly 100
+    - {name: "First part", trigger: "Roof is closed", percent: "49.99", invoice_due_days: 30, advance: false}
+    - {name: "Second part", trigger: "Works delivered", percent: "50", invoice_due_days: 30, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PAY]                             # REF07: block with R_PAY
+  error_fields:                               # where the error is shown
+    R_PAY: [milestones]                       # next to the milestone table
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

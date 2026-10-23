@@ -1,0 +1,19 @@
+# =============================================================================
+# P5.yaml - test scenario P5: contract price 0
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P5); law packet REF05.
+# Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P5                                        # scenario ID
+title: "Contract price 0"                     # description
+answers:                                      # what differs from base_project.yaml
+  contract_price: "0.00"                      # not a positive price
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PRICE]                           # handoff App. C: "contract_price <= 0"
+  error_fields:                               # where the error is shown
+    R_PRICE: [contract_price]                 # next to the price
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

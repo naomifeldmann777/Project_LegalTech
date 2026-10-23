@@ -1,0 +1,20 @@
+# =============================================================================
+# P4.yaml - test scenario P4: estimate without an estimate basis
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P4); law packet REF06; decision D16 (R_PRICE, not R_REQUIRED).
+# Warnings with errors: decision Q6; W_PRICE follows App. C ("estimate selected").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P4                                        # scenario ID
+title: "Estimate without estimate_basis"      # description
+answers:                                      # what differs from base_project.yaml
+  price_type: estimate                        # estimated price ...
+  estimate_basis: null                        # ... but no pricing basis
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PRICE]                           # handoff App. C: "estimate without estimate_basis"
+  error_fields:                               # where the error is shown
+    R_PRICE: [estimate_basis]                 # next to the basis question
+  warnings: [W_PRICE, W_CONSUMER]             # estimate warning and consumer warning (Q6)

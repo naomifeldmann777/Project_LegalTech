@@ -1,0 +1,19 @@
+# =============================================================================
+# P15.yaml - test scenario P15: work category "other"
+# -----------------------------------------------------------------------------
+# Source: law packet REF09 (added as P15, decision R7) and Task 4 ("other" stops
+# export with R_SCOPE as a PRODUCT error).
+# Expected result: from the law packet; NOT YET CONFIRMED by the law student (L11).
+# =============================================================================
+
+id: P15                                       # scenario ID
+title: "work_category = other (REF09)"        # description
+answers:                                      # what differs from base_project.yaml
+  work_category: other                        # outside the supported category
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_SCOPE]                           # REF09: block with R_SCOPE (PRODUCT)
+  error_fields:                               # where the error is shown
+    R_SCOPE: [work_category]                  # next to the category question
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

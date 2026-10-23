@@ -1,0 +1,19 @@
+# =============================================================================
+# P7.yaml - test scenario P7: contract date before 2026
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P7); handoff App. C (R_SCOPE: date before 2026-01-01).
+# Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P7                                        # scenario ID
+title: "Contract date 31 December 2025"       # description
+answers:                                      # what differs from base_project.yaml
+  contract_date: 2025-12-31                   # one day before the supported period
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_SCOPE]                           # outside the prototype scope
+  error_fields:                               # where the error is shown
+    R_SCOPE: [contract_date]                  # next to the date
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

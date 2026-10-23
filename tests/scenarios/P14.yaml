@@ -1,0 +1,18 @@
+# =============================================================================
+# P14.yaml - test scenario P14: payment_type not answered
+# -----------------------------------------------------------------------------
+# Source: law packet REF08 (added as P14, decision R7).
+# Expected result: from the law packet; NOT YET CONFIRMED by the law student (L11).
+# =============================================================================
+
+id: P14                                       # scenario ID
+title: "payment_type unanswered (REF08)"      # description
+answers:                                      # what differs from base_project.yaml
+  payment_type: null                          # not answered
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_REQUIRED]                        # REF08: block with R_REQUIRED
+  error_fields:                               # where the error is shown
+    R_REQUIRED: [payment_type]                # next to the payment question
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

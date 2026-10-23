@@ -1,0 +1,38 @@
+# =============================================================================
+# base_project.yaml - the basic, complete and valid project used by all scenarios
+# -----------------------------------------------------------------------------
+# What this file is for:
+#   Every scenario file (P1.yaml ... P15.yaml) starts from these answers and only
+#   changes what the scenario is about (decision D38). These answers alone are
+#   scenario P1: fixed price CHF 100,000.00, VAT included, payment on delivery.
+# How it fits into the project:
+#   tests/test_scenarios.py reads this file first, then each scenario file.
+# Which documents it implements:
+#   AI_PROMPT section 9 ("All other in-scope required fields are filled with valid
+#   example values"); law packet Task 11 baseline (contract date 1 November 2026).
+# How to write answers in the scenario files:
+#   - amounts and percentages IN QUOTES, e.g. "100000.00"; without quotes YAML
+#     makes a float, which the engine refuses (decision D25)
+#   - dates WITHOUT quotes, e.g. 2026-11-01
+#   - null = not answered; false = answered "no" (handoff App. B)
+#   - all names and addresses are fictional
+# =============================================================================
+
+answers:                                      # the answers {field ID: value}; field IDs from parameters.yaml
+  contract_date: 2026-11-01                   # law packet baseline: 1 November 2026
+  work_category: immovable_residential_building  # the only supported category
+  scope_confirmed: true                       # scope confirmed
+  client_name: "Anna Muster"                  # fictional client
+  client_address: "Seestrasse 1\n8000 Zürich"  # "\n" starts a new line of the address
+  contractor_name: "Muster Bau AG"            # fictional contractor
+  contractor_address: "Werkstrasse 5\n3000 Bern"  # fictional address
+  site_address: "Gartenweg 12\n8001 Zürich"   # where the Works are carried out
+  work_description: "Renovation of the bathroom on the first floor: new tiles, shower and sanitary fittings."  # the Works
+  exclusions_and_client_supplies: null        # optional, not answered
+  annex_register: []                          # optional, no technical annexes
+  price_type: fixed                           # fixed price
+  contract_price: "100000.00"                 # CHF 100,000.00 (in quotes)
+  vat_treatment: included                     # the price includes VAT
+  payment_type: on_completion                 # payment on delivery
+  contractor_signatory_name: "Max Muster"     # who signs for the Contractor
+  contractor_signatory_capacity: "Managing director"  # in which capacity

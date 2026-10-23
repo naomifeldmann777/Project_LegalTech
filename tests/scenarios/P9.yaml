@@ -1,0 +1,20 @@
+# =============================================================================
+# P9.yaml - test scenario P9: payment on delivery with old milestones still in the answers
+# -----------------------------------------------------------------------------
+# Source: AI_PROMPT section 9 (P9); handoff App. B "Inactive inputs are ignored" (E8).
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P9                                        # scenario ID
+title: "Payment on delivery, stale milestones 30/30/30"  # description
+answers:                                      # what differs from base_project.yaml (payment_type stays on_completion)
+  milestones:                                 # invalid old rows that must be ignored
+    - {name: "Stage 1", trigger: "Foundations completed", percent: "30", invoice_due_days: 30, advance: false}
+    - {name: "Stage 2", trigger: "Roof is closed", percent: "30", invoice_due_days: 30, advance: false}
+    - {name: "Stage 3", trigger: "Works delivered", percent: "30", invoice_due_days: 30, advance: false}
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error: the old milestones do not count
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION]  # payment on delivery
+  errors: []                                  # no R_PAY
+  warnings: [W_CONSUMER]                      # consumer warning
+  ignored_fields: [milestones]                # the old milestones were ignored
