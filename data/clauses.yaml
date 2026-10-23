@@ -1,0 +1,194 @@
+# =============================================================================
+# clauses.yaml - the clause library (topics, slots, clauses, derived texts)
+# -----------------------------------------------------------------------------
+# What this file is for:
+#   It holds the contract clauses the rule engine can select, word for word,
+#   with their version, placeholders, safety flags and legal citations.
+# How it fits into the project:
+#   - rules.yaml selects a clause with a SEL_ rule (rule ID = "SEL_" + clause ID).
+#   - engine.py fills the {placeholders} in "text" with answers (parameters.yaml)
+#     or with the derived texts at the end of this file.
+#   - generator.py puts each filled clause into its "slot" in the Word template,
+#     e.g. {{ price_clause }} in skeleton section 5.
+#   - The review screen shows "title", the citations (sources.yaml) and "basis_note".
+# Which documents it implements:
+#   - Legal handoff Appendix D: clause texts, inputs, "Basis" lines and
+#     "Deterministic text assembly" (vat_treatment_text, milestone_reconciliation_text)
+#   - Legal handoff Appendix C: selection cardinality (exactly one price and one
+#     payment clause), metadata flags
+#   - Law packet (Legal_Todo_Responses_EN): new PRICE_FIXED wording (page 6),
+#     review titles (Task 8), citations (Task 2), milestone rows (page 7)
+#   - Diagrams PDF chapter 8: ER entities TOPIC and CLAUSE
+# Decisions used: D10, D23, D24, D30, D31, D36, R5, D39 (clause texts from the
+#   handoff; PRICE_FIXED from the law packet to avoid repeating section 10) and
+#   D40 (clauses have "topic" and "slot"; the cardinality is checked per slot).
+# Wording status: NOT YET APPROVED by the law student (open item L6).
+# Change rule: never change a clause text without the law student, and raise its
+#   "version" whenever the wording changes (handoff App. E, change management).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Topics (ER entity TOPIC). Iteration 1 has topic 1 only; topics 2-5 come later.
+# -----------------------------------------------------------------------------
+topics:
+  - id: PRICE_PAYMENT                         # topic ID (decision D9); never change it
+    name: "Price and payment"                 # name shown on the review screen (handoff note sheet 1)
+    order_in_contract: 1                      # orders the review screen (D31); the contract order comes from the skeleton
+
+# -----------------------------------------------------------------------------
+# Slots: the places in the Word template where a selected clause is put
+# (skeleton section 5: {{ price_clause }} and {{ payment_clause }}).
+# The engine counts the selected clauses per slot (selection cardinality,
+# handoff App. C, reported as R_CROSS, D24). A slot never holds more than one clause.
+# -----------------------------------------------------------------------------
+slots:
+  - id: price_clause                          # slot name = placeholder name in the Word template (D30)
+    min: 1                                    # App. C: exactly one price variant, so at least 1 ...
+    max: 1                                    # ... and at most 1
+  - id: payment_clause                        # skeleton section 5
+    min: 1                                    # App. C: exactly one payment variant
+    max: 1                                    # at most 1
+
+# -----------------------------------------------------------------------------
+# Clauses (ER entity CLAUSE). Placeholders in "text" are written {like_this};
+# each one must be listed in "inputs" and must be a field of parameters.yaml or
+# a derived placeholder (end of this file).
+# -----------------------------------------------------------------------------
+clauses:
+
+  # --- PRICE_FIXED (law packet page 6) -----------------------------------------
+  - id: PRICE_FIXED                           # clause ID from App. D; never change it (selected by SEL_PRICE_FIXED)
+    topic: PRICE_PAYMENT                      # topic of the clause (ID from "topics")
+    slot: price_clause                        # place in the Word template where the clause goes (ID from "slots", D30)
+    title: "Fixed price"                      # title on the review screen only (law packet Task 8, D31)
+    version: "1.1"                            # wording version, raised when the text changes (law packet: "1.1.0"; App. D text was 1.0)
+    # clause text, word for word from law packet page 6: App. D text with the change sentence
+    # replaced by a reference to skeleton section 10, so the contract does not say it twice
+    # (">-" joins the lines below into one paragraph with single spaces)
+    text: >-
+      The fixed price for the Works is CHF {contract_price}. {vat_treatment_text}
+      The Contractor shall complete the agreed Works for that price. Higher labour
+      or material costs alone do not increase it; lower costs alone do not reduce
+      it. Changes to the Works and any corresponding adjustment are governed by
+      section 10. The statutory relief available under Article 373 paragraph 2 CO
+      remains reserved.
+    inputs: [contract_price, vat_treatment_text]  # placeholders used in "text" (App. D "Inputs")
+    citations: [CO_363, CO_373_1_TO_3]        # legal basis for the review screen (IDs from sources.yaml, law packet Task 2)
+    basis_note: "CO 363 and 373; written change process is a product choice."  # App. D "Basis" line, review screen only
+    metadata:                                 # safety flags read by the LAW checks (App. C); true = the clause does not interfere
+      notices_preserved: true                 # defect notice periods are not shortened
+      limitation_preserved: true              # the 5-year limitation is not shortened
+      free_repair_preserved: true             # free repair is not restricted
+      judicial_reduction_preserved: true      # a court can still reduce an excessive penalty
+      own_intent_gross_preserved: true        # liability for intent and gross negligence is not limited
+      statutory_exit_preserved: true          # statutory termination routes stay available
+
+  # --- PRICE_ESTIMATE (handoff App. D) ----------------------------------------
+  - id: PRICE_ESTIMATE                        # clause ID from App. D (selected by SEL_PRICE_ESTIMATE)
+    topic: PRICE_PAYMENT                      # topic 1
+    slot: price_clause                        # same slot as PRICE_FIXED; only one of them is selected
+    title: "Estimated price"                  # law packet Task 8
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The approximate price is CHF {contract_price}. {vat_treatment_text} This is
+      an estimate, not a fixed ceiling. The final price is based on the value of the
+      work and the Contractor’s expenses, using the agreed pricing basis:
+      {estimate_basis}. The Contractor shall inform the Client promptly of an
+      expected overrun and explain its cause and amount. The Client’s rights under
+      Article 375 CO remain reserved.
+    inputs: [contract_price, vat_treatment_text, estimate_basis]  # App. D "Inputs"
+    citations: [CO_374, CO_375_1_TO_2]        # law packet Task 2
+    basis_note: "CO 374–375; added notice process is contractual."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true (law packet Task 6)
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- PAYMENT_ON_COMPLETION (handoff App. D) ---------------------------------
+  - id: PAYMENT_ON_COMPLETION                 # clause ID from App. D; means payment on delivery
+    topic: PRICE_PAYMENT                      # topic 1
+    slot: payment_clause                      # place in skeleton section 5
+    title: "Payment on delivery"              # law packet Task 8
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The remuneration is due when the Contractor delivers the Works. Delivery,
+      inspection and approval of defects are distinct. This payment clause does not
+      waive the Client’s statutory defences or defect remedies.
+    inputs: []                                # App. D "Inputs: None"
+    citations: [CO_372_1_TO_2]                # law packet Task 2
+    basis_note: "CO 372; preserves statutory defences."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- PAYMENT_MILESTONE (handoff App. D) -------------------------------------
+  - id: PAYMENT_MILESTONE                     # clause ID from App. D (selected by SEL_PAYMENT_MILESTONE)
+    topic: PRICE_PAYMENT                      # topic 1
+    slot: payment_clause                      # same slot as PAYMENT_ON_COMPLETION
+    title: "Milestone payments"               # law packet Task 8
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      Payments follow the milestone schedule below. Each payment falls due when its
+      stated trigger has occurred and the stated period after receipt of its invoice
+      has elapsed. {milestones_schedule} {milestone_reconciliation_text} Statutory
+      payment defences remain reserved.
+    inputs: [milestones_schedule, milestone_reconciliation_text]  # App. D "Inputs"
+    citations: [CO_372_1_TO_2, CO_374]        # law packet Task 2
+    basis_note: "CO 372 as varied by agreement; CO 374 for estimated-price reconciliation."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+# -----------------------------------------------------------------------------
+# Derived placeholders (decision D10): texts the user does not type; they are
+# built from answers. placeholders.py builds them, but all fixed wording is here.
+# -----------------------------------------------------------------------------
+derived_placeholders:
+
+  # --- vat_treatment_text (App. D "Deterministic text assembly") ---------------
+  - id: vat_treatment_text                    # placeholder name used in clause texts
+    built_from: [vat_treatment]               # answers it is built from (shown as input values on the review screen)
+    chosen_by: vat_treatment                  # the answer that decides which text below is used
+    text_by_answer:                           # one text per answer of "chosen_by" (must match parameters.yaml allowed values)
+      included: "This amount includes applicable VAT."   # App. D, word for word
+      not_charged: "No VAT is charged on this amount."   # App. D, word for word
+
+  # --- milestone_reconciliation_text (App. D "Deterministic text assembly") ----
+  - id: milestone_reconciliation_text         # placeholder used in PAYMENT_MILESTONE
+    built_from: [price_type]                  # depends only on the price type
+    chosen_by: price_type                     # fixed or estimate
+    text_by_answer:                           # App. D, word for word
+      fixed: "The schedule allocates the fixed price."
+      estimate: "These are advances against the final price. Any balance is paid, or excess refunded, on final reconciliation at delivery."
+
+  # --- milestones_schedule (App. D; row wording from law packet page 7) --------
+  # App. D: "Numbered rows with each name, trigger, percentage, CHF amount and
+  # invoice_due_days". One line per milestone (D36).
+  - id: milestones_schedule                   # placeholder used in PAYMENT_MILESTONE
+    built_from: [milestones, contract_price, price_type]  # the rows, the price they share, and the row wording
+    chosen_by: price_type                     # fixed and estimate rows use different words (law packet page 7)
+    # Row templates. The {names} in a row are filled per milestone by placeholders.py:
+    #   index = row number from 1; name, trigger, invoice_due_days = the milestone's answers;
+    #   percent = the milestone's percentage (e.g. 20 or 33.33);
+    #   amount_chf = percent x contract_price, rounded half-up to cents; the last row takes
+    #     the balance so all rows add up exactly to the price (D23); format 20,000.00 (D35);
+    #   advance_label = one of the two advance labels below.
+    row_by_answer:                            # one row template per answer of "chosen_by"
+      fixed: "{index}. {name} | Trigger: {trigger} | Share of fixed price: {percent}% | Instalment: CHF {amount_chf} | Invoice period: {invoice_due_days} calendar days after receipt | {advance_label}"
+      estimate: "{index}. {name} | Trigger: {trigger} | Share of estimated schedule base: {percent}% | Provisional payment on account: CHF {amount_chf} | Invoice period: {invoice_due_days} calendar days after receipt | {advance_label}"
+    advance_label_if_true: "Pre-performance advance: payable before the corresponding work is performed."  # law packet page 7
+    advance_label_if_false: "No pre-performance advance: this instalment follows the stated performance trigger."  # law packet page 7
