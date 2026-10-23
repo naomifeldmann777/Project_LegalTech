@@ -1,0 +1,211 @@
+# =============================================================================
+# rules.yaml - the if-then rules of the Construction Contract Generator
+# -----------------------------------------------------------------------------
+# What this file is for:
+#   It lists every rule of topic 1: rules that block generation (R_, errors),
+#   rules that warn (W_, warnings) and rules that select clauses (SEL_).
+# How it fits into the project:
+#   - engine.py reads these rules and applies them to the answers of the
+#     questionnaire, in the order of "step" (diagrams PDF chapter 2).
+#   - Field IDs come from parameters.yaml, clause IDs from clauses.yaml and
+#     citation IDs from sources.yaml.
+#   - Special checks named under "check" are small Python functions in checks.py.
+# Which documents it implements:
+#   - Legal handoff Appendix C: rule IDs, types, conditions, LAW/PRODUCT basis
+#   - Diagrams PDF chapter 2 (engine steps) and chapter 3 (topic 1 flowchart)
+#   - Law packet (Legal_Todo_Responses_EN): citations (Task 2 and page 12),
+#     messages (Task 9) and selection reasons (Task 10)
+# Decisions used: D6, D7, D16, D18, D19, D20, D24, D28, D41, D42, R6.
+# Wording status: messages and reasons are NOT YET APPROVED by the law student
+#   (open items L9 and L10). The R_CROSS message is a team draft.
+# Change rule: raise a rule's "version" whenever its condition or message changes.
+# -----------------------------------------------------------------------------
+# HOW TO READ A RULE
+#   type      select (adds a clause), require or error (blocks "Generate"),
+#             warning (shows a warning, "Generate" stays possible)
+#   step      engine step from diagrams PDF ch. 2: 1 = input errors, 2 = warnings,
+#             3 = select clauses, 5 = final safety checks
+#   category  LAW (mandatory law) or PRODUCT (the app needs it); R_ and W_ rules only
+#   cases     the different ways an R_ or W_ rule can fire; each case has:
+#               when     the condition (see below)
+#               field    the question the message is shown next to
+#               check    optional: name of a special check in checks.py; the case then
+#                        fires once for every field the check reports
+#               message  optional: replaces the rule's "message" for this case
+# CONDITIONS ("when") are written as data, never as Python code (decision D6):
+#   {field: X, op: OP, value: V}   compare the answer of field X with V
+#     OP = equals, not_equals, less_than, at_most, greater_than, at_least, one_of
+#   {field: X, op: is_empty} / {field: X, op: is_filled}   no value / a value
+#   all: [...]  every condition in the list is true (AND)
+#   any: [...]  at least one condition in the list is true (OR)
+#   not: {...}  the condition is false (NOT)
+#   {always: true}  always true
+#   Missing answers: an order comparison (less_than, at_most, ...) with a missing
+#   answer is false, so a missing answer is only reported once, by R_REQUIRED;
+#   not_equals with a missing answer is true.
+#   Inactive answers (parameters.yaml "active_when") are removed before any rule runs.
+# =============================================================================
+
+rules:
+
+  # ===== Step 1: input errors (block "Generate") ==============================
+
+  # --- R_SCOPE (App. C): the project is outside the prototype scope -----------
+  - id: R_SCOPE                               # rule ID from App. C; never change it
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step (diagrams ch. 2)
+    category: PRODUCT                         # App. C basis: "PRODUCT scope"
+    topic: null                               # applies to the whole project, not one topic
+    version: "1.0"                            # rule version (handoff App. E)
+    citations: []                             # law packet: no statutory rule asserted
+    # message shown to the user (law packet Task 9), used by every case below
+    message: "This project is outside the prototype scope. Correct the scope answers or stop; the tool does not assess this type of contract."
+    cases:                                    # App. C: date before 2026-01-01, unsupported work_category, scope_confirmed not true
+      - when: {field: contract_date, op: less_than, value: 2026-01-01}  # contract concluded before 2026
+        field: contract_date                  # message is shown next to this question
+      - when: {field: work_category, op: not_equals, value: immovable_residential_building}  # also true when unanswered (D16)
+        field: work_category                  # message next to work_category
+      - when: {field: scope_confirmed, op: not_equals, value: true}  # false or unanswered (D16)
+        field: scope_confirmed                # message next to scope_confirmed
+
+  # --- R_REQUIRED (App. C): an active required field is missing ---------------
+  - id: R_REQUIRED                            # rule ID from App. C
+    type: require                             # App. C type "require"; blocks "Generate" like an error
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT integrity"
+    topic: null                               # whole project
+    version: "1.0"                            # rule version
+    citations: []                             # law packet: no statutory rule asserted
+    message: "Complete the highlighted active field before generating the document."  # law packet Task 9
+    # engine.py step 4 also reports a clause placeholder that stays unfilled under this rule ID (App. C)
+    cases:
+      - when: {always: true}                  # checked for every project
+        check: missing_required_fields        # active required field empty, answer not allowed, or list row incomplete;
+                                              # skips fields with "checked_by" in parameters.yaml (D16)
+
+  # --- R_PRICE (App. C): price not positive or estimate basis missing ---------
+  - id: R_PRICE                               # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT; CO 374"
+    topic: PRICE_PAYMENT                      # topic 1 (ID from clauses.yaml)
+    version: "1.0"                            # rule version
+    citations: [CO_374]                       # law packet Task 2
+    message: "Enter a positive CHF price or estimate. If you selected an estimate, also explain its pricing basis."  # law packet Task 9
+    cases:
+      - when: {field: contract_price, op: at_most, value: 0}  # price is zero or negative
+        field: contract_price                 # message next to the price
+      - when:                                 # estimate without a pricing basis
+          all:
+            - {field: price_type, op: equals, value: estimate}
+            - {field: estimate_basis, op: is_empty}
+        field: estimate_basis                 # message next to the basis
+
+  # --- R_PAY (App. C): invalid milestone schedule ------------------------------
+  - id: R_PAY                                 # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT"
+    topic: PRICE_PAYMENT                      # topic 1
+    version: "1.0"                            # rule version
+    citations: [CO_372]                       # law packet Task 2
+    message: "Correct the milestone schedule: complete each row, use positive percentages totalling exactly 100, valid invoice days and advance answers, and positive amounts after cent allocation."  # law packet Task 9
+    cases:
+      - when: {field: payment_type, op: equals, value: milestones}  # only for milestone payments
+        check: milestone_problems             # no rows, empty name/trigger, percent not > 0 and <= 100,
+                                              # total not 100, invalid due days, advance unanswered,
+                                              # or an amount not positive after cent rounding
+
+  # ===== Step 2: warnings ("Generate" stays possible) ==========================
+
+  # --- W_PRICE (App. C): estimate or advance payment ---------------------------
+  - id: W_PRICE                               # rule ID from App. C
+    type: warning                             # informs only
+    step: 2                                   # engine step
+    category: PRODUCT                         # law packet page 12 (decision R6)
+    topic: PRICE_PAYMENT                      # shown in the review record of the topic 1 clauses (D28)
+    version: "1.0"                            # rule version
+    citations: [CO_374, CO_375]               # law packet: "S1 CO 374-375"
+    message: null                             # no common message: each case has its own (law packet Task 9)
+    cases:                                    # both cases can fire together; then both messages are shown (D20)
+      - when: {field: price_type, op: equals, value: estimate}  # an estimate was chosen
+        field: price_type                     # message next to the price type
+        message: "The price is approximate, not a fixed ceiling. The final remuneration may differ under the agreed pricing basis. Statutory overrun remedies remain reserved."
+      - when: {field: payment_type, op: equals, value: milestones}  # only for milestone payments
+        check: any_advance_milestone          # at least one milestone has advance = true
+        message: "This payment is due before its corresponding work is performed. Paying early creates a funding risk if that work is not completed."
+
+  # --- W_CONSUMER (App. C): consumer standard-term review ----------------------
+  - id: W_CONSUMER                            # rule ID from App. C
+    type: warning                             # informs only
+    step: 2                                   # engine step
+    category: LAW                             # law packet page 12 (decision R6)
+    topic: null                               # whole project; only in the top-level warning list (D28)
+    version: "1.0"                            # rule version
+    citations: [UWG_8]                        # law packet Task 2
+    message: "Consumer standard-term protection may apply. Its application and the assessment of a term depend on the contract purpose, wording and circumstances. A private-person answer alone is not conclusive. This warning does not establish that every term is fair or enforceable."  # law packet Task 9
+    cases:
+      - when: {always: true}                  # every project (D19)
+        field: null                           # not tied to one question
+
+  # ===== Step 3: select clauses ================================================
+  # A SEL_ rule adds one clause. Its ID is "SEL_" + the clause ID (App. C).
+  # SEL_ rules have no citations of their own: the review screen shows the
+  # citations of the clause they select (law packet page 11).
+
+  # --- SEL_PRICE_FIXED ---------------------------------------------------------
+  - id: SEL_PRICE_FIXED                       # rule ID = "SEL_" + clause ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: PRICE_PAYMENT                      # topic 1
+    version: "1.0"                            # rule version
+    clause: PRICE_FIXED                       # the clause this rule adds (ID from clauses.yaml)
+    when: {field: price_type, op: equals, value: fixed}  # App. C: price_type = fixed
+    # plain-language reason shown on the review screen (law packet Task 10)
+    reason: "You selected a fixed price for the agreed Works. PRICE_FIXED applies the fixed-price approach under CO 373 and preserves the stated statutory relief."
+
+  # --- SEL_PRICE_ESTIMATE ------------------------------------------------------
+  - id: SEL_PRICE_ESTIMATE                    # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: PRICE_PAYMENT                      # topic 1
+    version: "1.0"                            # rule version
+    clause: PRICE_ESTIMATE                    # clause added
+    when: {field: price_type, op: equals, value: estimate}  # App. C: price_type = estimate
+    reason: "You selected an approximate price. PRICE_ESTIMATE uses the agreed pricing basis and preserves the statutory overrun remedies under CO 374-375."  # law packet Task 10
+
+  # --- SEL_PAYMENT_ON_COMPLETION -----------------------------------------------
+  - id: SEL_PAYMENT_ON_COMPLETION             # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: PRICE_PAYMENT                      # topic 1
+    version: "1.0"                            # rule version
+    clause: PAYMENT_ON_COMPLETION             # clause added
+    when: {field: payment_type, op: equals, value: on_completion}  # App. C: payment_type = on_completion
+    reason: "You selected payment on delivery. PAYMENT_ON_COMPLETION follows CO 372 and preserves statutory payment defences."  # law packet Task 10
+
+  # --- SEL_PAYMENT_MILESTONE ---------------------------------------------------
+  - id: SEL_PAYMENT_MILESTONE                 # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: PRICE_PAYMENT                      # topic 1
+    version: "1.0"                            # rule version
+    clause: PAYMENT_MILESTONE                 # clause added
+    when: {field: payment_type, op: equals, value: milestones}  # App. C: payment_type = milestones
+    reason: "You selected staged payments. PAYMENT_MILESTONE uses the agreed triggers and invoice periods, with final accounting appropriate to the selected price type."  # law packet Task 10
+
+  # ===== Step 5: final safety checks ===========================================
+
+  # --- R_CROSS (App. C), only the selection cardinality part in iteration 1 ---
+  - id: R_CROSS                               # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 5                                   # engine step (diagrams ch. 2)
+    category: PRODUCT                         # law packet page 12: selection cardinality is PRODUCT (D24)
+    topic: null                               # whole contract
+    version: "1.0"                            # rule version
+    citations: []                             # cardinality is a PRODUCT check, no statutory basis
+    message: "Internal check failed: a contract section received too many or too few clauses. Please report this problem to the team."  # team draft
+    cases:
+      - when: {always: true}                  # checked whenever clauses were selected
+        check: selection_cardinality          # number of clauses per slot is outside min/max (clauses.yaml "slots");
+                                              # reports the slot IDs instead of field IDs
