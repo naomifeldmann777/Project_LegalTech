@@ -4,3 +4,4 @@ output/
 .DS_Store
 ~$*.docx
 .venv/
+docs/progress.md

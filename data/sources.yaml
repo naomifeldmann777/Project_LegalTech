@@ -1,0 +1,136 @@
+# =============================================================================
+# sources.yaml - legal sources and citations of the Construction Contract Generator
+# -----------------------------------------------------------------------------
+# What this file is for:
+#   It lists the legal sources (laws and official guidance) that our clauses and
+#   rules rely on, and the exact article/paragraph citations taken from them.
+# How it fits into the project:
+#   clauses.yaml and rules.yaml point to the citation IDs below (e.g. CO_374).
+#   The review screen shows the citation label, its summary, the source title and
+#   the link. Sources are NEVER printed in the contract text (handoff App. C,
+#   "Review record required for every selected clause").
+# Which documents it implements:
+#   - Legal handoff Appendix F: source register (S1, S2, S4)
+#   - Law packet (Legal_Todo_Responses_EN) Task 1: S4 keeps two links
+#   - Law packet Task 2: citations of the 4 clauses and the topic 1 rules
+#   - Legal handoff note sheet 1 "Articles" and "Consumer point": citation summaries
+#   - Diagrams PDF chapter 8: ER entities LEGAL_SOURCE and CITATION
+# Scope: iteration 1, topic 1 "Price and payment" only. Later topics add entries.
+# =============================================================================
+
+# Version of the legal basis used by this rule package (decision D12).
+# It is the date of the official CO consolidation (S1).
+# Written in quotes so that YAML keeps it as text and not as a date.
+law_version: "2026-10-01"
+
+# -----------------------------------------------------------------------------
+# Legal sources (ER entity LEGAL_SOURCE): one entry per document.
+# -----------------------------------------------------------------------------
+sources:
+
+  # --- S1: the controlling legal text (handoff App. F) -----------------------
+  - id: S1                                    # source ID from handoff App. F; never change it
+    title: "Swiss Code of Obligations SR 220"  # name of the source, copied from App. F
+    # description of the source, copied from App. F
+    note: "Official German consolidation dated 1 October 2026. Controlling research text."
+    version_date: 2026-10-01                  # date of the version we use (YAML reads it as a date)
+    accessed_on: 2026-10-08                   # App. F: all web sources were accessed on 8 October 2026
+    reading_aid: S2                           # App. F: S2 is the English reading aid for S1 (optional key)
+    # link to the official PDF (German), given by the law student
+    url: "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/27/317_321_377/20261001/de/pdf-a/fedlex-data-admin-ch-eli-cc-27-317_321_377-20261001-de-pdf-a.pdf"
+
+  # --- S2: English reading aid of S1 (handoff App. F) -------------------------
+  - id: S2                                    # source ID from handoff App. F
+    title: "Fedlex English Code of Obligations"  # copied from App. F
+    # description copied from App. F: the English text is not legally binding
+    note: "Translation dated 1 January 2026. The relevant English provisions were cross-checked with S1. English is not an official language of the Confederation; the translation has no legal force."
+    version_date: 2026-01-01                  # date of the translation (App. F)
+    accessed_on: 2026-10-08                   # App. F access date
+    # link to the official PDF (English), given by the law student
+    url: "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/27/317_321_377/20260101/en/pdf-a/fedlex-data-admin-ch-eli-cc-27-317_321_377-20260101-en-pdf-a.pdf"
+
+  # --- S4: consumer standard terms (handoff App. F, law packet Task 1) --------
+  - id: S4                                    # source ID from handoff App. F
+    title: "UWG article 8 and SECO standard terms guidance"  # copied from App. F
+    # description copied from App. F
+    note: "Federal Act against Unfair Competition, SR 241, Art. 8; SECO explains the consumer standard-term imbalance test and case-specific court assessment."
+    version_date: null                        # App. F gives no version date for S4 (null = not known)
+    accessed_on: 2026-10-08                   # App. F access date
+    # link to the SECO guidance page (it explains the issue), given by the law student
+    url: "https://www.seco.admin.ch/de/missbraeuchliche-geschaeftsbedingungen"
+    # link to the law itself (UWG, SR 241) on Fedlex; law packet Task 1: "the statute is the legal source"
+    # optional key, used only by S4
+    url_statutory_text: "https://www.fedlex.admin.ch/eli/cc/1988/223_223_223/de"  # given by the law student (L1)
+
+# -----------------------------------------------------------------------------
+# Citations (ER entity CITATION): one entry per article or paragraph range,
+# exactly as the law packet (Task 2) lists them (decisions D11 and R5).
+# Article and paragraph are stored separately from the source URL (handoff App. F).
+# Only the citations used by topic 1 clauses and rules are listed here.
+# -----------------------------------------------------------------------------
+citations:
+
+  # Art. 363 CO - used by clause PRICE_FIXED (law packet Task 2: "CO 363")
+  - id: CO_363                                # citation ID: law + article (+ paragraphs if only some are meant)
+    source: S1                                # source the article is in (must be an ID from "sources")
+    article: "363"                            # article number as text (articles can look like "40a")
+    paragraph: null                           # paragraph(s) as text, e.g. "2", "1bis" or a range "1-3"; null = whole article
+    label: "Art. 363 CO"                      # how the citation is shown on the review screen
+    summary: "the Client pays for the agreed result."  # copied from handoff note sheet 1 "Articles"
+
+  # Art. 372 CO, whole article - used by rule R_PAY (law packet Task 2: "S1 CO 372")
+  - id: CO_372                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "372"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 372 CO"                      # shown on the review screen
+    summary: "remuneration is due on delivery, or delivery of separately priced parts."  # note sheet 1
+
+  # Art. 372 para. 1-2 CO - used by clauses PAYMENT_ON_COMPLETION and PAYMENT_MILESTONE (packet: "CO 372(1)-(2)")
+  - id: CO_372_1_TO_2                         # citation ID with a paragraph range
+    source: S1                                # Code of Obligations
+    article: "372"                            # article number
+    paragraph: "1-2"                          # paragraphs 1 to 2
+    label: "Art. 372 para. 1-2 CO"            # shown on the review screen
+    summary: "remuneration is due on delivery, or delivery of separately priced parts."  # note sheet 1
+
+  # Art. 373 para. 1-3 CO - used by clause PRICE_FIXED (packet: "CO 373(1)-(3)")
+  - id: CO_373_1_TO_3                         # citation ID with a paragraph range
+    source: S1                                # Code of Obligations
+    article: "373"                            # article number
+    paragraph: "1-3"                          # paragraphs 1 to 3
+    label: "Art. 373 para. 1-3 CO"            # shown on the review screen
+    summary: "an agreed fixed price normally binds both parties."  # note sheet 1
+
+  # Art. 374 CO, whole article - used by clauses PRICE_ESTIMATE, PAYMENT_MILESTONE and rules R_PRICE, W_PRICE
+  - id: CO_374                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "374"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 374 CO"                      # shown on the review screen
+    summary: "no fixed price means value of work and Contractor expenses."  # note sheet 1
+
+  # Art. 375 CO, whole article - used by rule W_PRICE (packet: "S1 CO 374-375")
+  - id: CO_375                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "375"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 375 CO"                      # shown on the review screen
+    summary: "a disproportionate estimate overrun gives remedies, with special rules for building on the Client’s land."  # note sheet 1
+
+  # Art. 375 para. 1-2 CO - used by clause PRICE_ESTIMATE (packet: "CO 375(1)-(2)")
+  - id: CO_375_1_TO_2                         # citation ID with a paragraph range
+    source: S1                                # Code of Obligations
+    article: "375"                            # article number
+    paragraph: "1-2"                          # paragraphs 1 to 2
+    label: "Art. 375 para. 1-2 CO"            # shown on the review screen
+    summary: "a disproportionate estimate overrun gives remedies, with special rules for building on the Client’s land."  # note sheet 1
+
+  # Art. 8 UWG - used by rule W_CONSUMER (packet: "S4 UWG Art. 8")
+  - id: UWG_8                                 # citation ID
+    source: S4                                # UWG / SECO guidance
+    article: "8"                              # article number
+    paragraph: null                           # whole article
+    label: "Art. 8 UWG"                       # shown on the review screen
+    # copied from handoff note sheet 1 "Consumer point" (without the "[S4]" marker)
+    summary: "Review one-sided standard terms under UWG 8 where the Client qualifies as a consumer; private status alone is not a complete legal assessment."
