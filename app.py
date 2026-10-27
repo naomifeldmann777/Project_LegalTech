@@ -113,9 +113,9 @@ def main():
     result = None  # no result until the first check
     if st.session_state.get("checked"):  # checked at least once: show messages (no red on an empty form)
         result = evaluate(answers, knowledge)  # the engine checks everything and selects the clauses
-        show_messages(result, message_areas, general_messages)  # red and yellow messages next to the questions
+        show_messages(result, message_areas, general_messages, knowledge)  # red and yellow messages with legal basis
         if result["can_generate"]:  # no errors
-            show_review(result)  # review screen
+            show_review(result, knowledge)  # review screen
             offer_download(result, answers, knowledge)  # download button
         else:  # at least one error
             st.error(f"Please correct the {len(result['errors'])} problem(s) marked in red above.")  # summary
@@ -309,24 +309,59 @@ def clean_cell(value, column):
 # Messages, review screen and download
 # ---------------------------------------------------------------------------
 
-def show_messages(result, message_areas, general_messages):
-    """Show every error (red) and warning (yellow) right below its question.
+def show_messages(result, message_areas, general_messages, knowledge):
+    """Show every error (red) and warning (yellow) right below its question, with its legal basis.
 
     Messages without a question (e.g. W_CONSUMER, or R_CROSS which names a slot)
     are shown at the top of the page.
     """
     for error in result["errors"]:  # each error
         place = message_areas.get(error["field"], general_messages)  # below its question, else at the top
-        place.error(error["message"])  # red box
+        place.error(message_with_basis(error, knowledge))  # red box: message + legal basis
     for warning in result["warnings"]:  # each warning (also shown when there are errors, D18)
         place = message_areas.get(warning["field"], general_messages)  # below its question, else at the top
-        place.warning(warning["message"])  # yellow box
+        place.warning(message_with_basis(warning, knowledge))  # yellow box: message + legal basis
 
 
-def show_review(result):
+def message_with_basis(entry, knowledge):
+    """Return an error or warning message followed by its legal basis, as Markdown.
+
+    Rules without citations (e.g. R_REQUIRED, a pure PRODUCT rule) show only the message.
+    """
+    if not entry["citations"]:  # no legal basis (law packet: "no statutory rule asserted")
+        return entry["message"]  # only the message
+    return entry["message"] + "\n\n" + legal_basis(entry["citations"], knowledge)  # message, empty line, legal basis
+
+
+def legal_basis(citation_ids, knowledge):
+    """Return "Legal basis:" and one line per citation, as Markdown (the same look for clauses, errors and warnings)."""
+    lines = [f"- {citation_line(citation_id, knowledge)}" for citation_id in citation_ids]  # one bullet per citation
+    return "**Legal basis:**\n" + "\n".join(lines)  # heading and bullets
+
+
+def citation_line(citation_id, knowledge):
+    """Return one citation as Markdown: label with link, summary, source title and extra links.
+
+    The label links to the legal text itself. Extra links: the English translation
+    for the German Code of Obligations (S1 -> reading aid S2), and the SECO guidance
+    next to the UWG on Fedlex (S4, law packet Task 1: "the statute is the legal source").
+    Example: "[Art. 374 CO](...): no fixed price means ... (Swiss Code of Obligations SR 220) · [English translation](...)"
+    """
+    citation = knowledge["citations"][citation_id]  # from sources.yaml, e.g. CO_374
+    source = knowledge["sources"][citation["source"]]  # the document it is in, e.g. S1
+    law_url = source.get("url_statutory_text") or source["url"]  # the statute itself if a separate link exists
+    line = f"[{citation['label']}]({law_url}): {citation['summary']} ({source['title']})"  # the main part
+    if source.get("url_statutory_text"):  # S4: the statute link is above, the guidance is the normal url
+        line += f" · [guidance]({source['url']})"  # link to the SECO guidance
+    if source.get("reading_aid"):  # S1: German original; S2 is the English reading aid
+        line += f" · [English translation]({knowledge['sources'][source['reading_aid']]['url']})"  # link to S2
+    return line  # one Markdown line
+
+
+def show_review(result, knowledge):
     """Show the review screen: every selected clause with its reason, legal basis, version and text.
 
-    Legal sources are shown here only, never in the contract (handoff App. C).
+    Legal sources are shown here (and next to the messages), never in the contract (handoff App. C).
     """
     st.header("Review")  # review screen heading
     st.caption(f"Legal basis version: {result['law_version']}")  # law_version (handoff App. C)
@@ -335,9 +370,7 @@ def show_review(result):
         with st.expander(title, expanded=True):  # a box that can be folded
             st.markdown(f"**Reason:** {record['reason']}")  # plain-language reason (law packet Task 10)
             st.caption(f"Selected by rule {record['selection_rule_id']}")  # the rule ID
-            st.markdown("**Legal basis:**")  # the citations
-            for citation in record["citations"]:  # each article with a link to the official text
-                st.markdown(f"- [{citation['label']}]({citation['url']}): {citation['summary']} ({citation['source_title']})")
+            st.markdown(legal_basis([c["citation_id"] for c in record["citations"]], knowledge))  # the citations
             if record["basis_note"]:  # the App. D "Basis" line
                 st.caption(record["basis_note"])  # e.g. "... written change process is a product choice."
             if record["warnings"]:  # warnings of the same topic (D28)
@@ -347,7 +380,7 @@ def show_review(result):
     if result["warnings"]:  # all warnings once more before the download (diagrams PDF ch. 1, step 4)
         st.subheader("Warnings")  # heading
         for warning in result["warnings"]:  # each warning
-            st.warning(f"{warning['rule_id']}: {warning['message']}")  # yellow box with the rule ID
+            st.warning(f"**{warning['rule_id']}:** " + message_with_basis(warning, knowledge))  # rule ID, message, legal basis
     if result["ignored_fields"]:  # answers the engine ignored (e.g. old milestones)
         st.caption("Ignored answers (not used for these choices): " + ", ".join(result["ignored_fields"]))  # list them
 
