@@ -365,7 +365,11 @@ def show_review(result, knowledge):
     """
     st.header("Review")  # review screen heading
     st.caption(f"Legal basis version: {result['law_version']}")  # law_version (handoff App. C)
-    for record in result["selected_clauses"]:  # each selected clause, in contract order
+    current_topic = None  # the topic of the clause shown before (none yet)
+    for record in result["selected_clauses"]:  # each selected clause, already sorted by topic (engine.py)
+        if record["topic_id"] != current_topic:  # the first clause of a new topic
+            current_topic = record["topic_id"]  # remember the topic
+            st.subheader(knowledge["topics"][current_topic]["name"])  # topic heading, e.g. "Price and payment"
         title = f"{record['title']} ({record['clause_id']}, version {record['clause_version']})"  # e.g. "Fixed price (PRICE_FIXED, version 1.1)"
         with st.expander(title, expanded=True):  # a box that can be folded
             st.markdown(f"**Reason:** {record['reason']}")  # plain-language reason (law packet Task 10)
