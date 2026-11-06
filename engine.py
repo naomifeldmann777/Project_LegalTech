@@ -229,12 +229,16 @@ def _run_rules(step, active, knowledge, selected):
                 places = [case.get("field")]  # one place (None = not tied to a question)
             message = case.get("message") or rule["message"]  # the case's own message, else the rule's (D42)
             for place in places:  # one entry per place
-                entries.append(_entry(rule, place, message))  # remember what fired
+                entries.append(_entry(rule, place, message, case.get("citations", [])))  # remember what fired
     return entries  # may be empty
 
 
-def _entry(rule, field, message):
-    """Build one error or warning entry for the result."""
+def _entry(rule, field, message, case_citations=()):
+    """Build one error or warning entry for the result.
+
+    case_citations: extra legal basis of the case that fired, added to the rule's own
+    (e.g. a court decision that only concerns the estimate case of W_PRICE).
+    """
     return {  # the entry
         "rule_id": rule["id"],  # e.g. "R_PRICE"
         "type": rule["type"],  # error, require or warning
@@ -242,7 +246,7 @@ def _entry(rule, field, message):
         "topic": rule.get("topic"),  # e.g. "PRICE_PAYMENT", or None for the whole project
         "field": field,  # the question the message belongs to (a slot ID for R_CROSS, or None)
         "message": message,  # the text shown to the user
-        "citations": list(rule["citations"]),  # legal basis (citation IDs)
+        "citations": list(rule["citations"]) + list(case_citations),  # legal basis (citation IDs)
         "rule_version": rule["version"],  # version of the rule (handoff App. E)
     }  # end of the entry
 
@@ -332,7 +336,7 @@ def _citation_details(citation_id, knowledge):
         "summary": citation.get("summary"),  # one sentence from note sheet 1
         "source_id": source["id"],  # e.g. "S1"
         "source_title": source["title"],  # e.g. "Swiss Code of Obligations SR 220"
-        "url": source["url"],  # link to the official text
+        "url": citation.get("url") or source["url"],  # a court decision's own link, otherwise the official text
     }  # end of the citation
 
 

@@ -158,6 +158,15 @@ def test_no_sources_reasons_or_warnings_in_the_contract(knowledge):
         assert piece not in text, piece  # not in the contract
 
 
+def test_no_court_decisions_in_the_contract(knowledge):
+    """Court decisions are legal basis for the review screen only, for fixed prices and for estimates."""
+    estimate = {**p2_answers(), "price_type": "estimate", "estimate_basis": "Hourly rates and materials at cost"}  # second price clause
+    for answers in (p2_answers(), estimate):  # both price clauses cite decisions
+        text = contract_text(generate(answers, knowledge))  # the finished contract
+        for piece in ["BGE", "4A_15", "servat.unibe", "omnilex", "See court decision", "bger.ch"]:  # labels, links and link text
+            assert piece not in text, piece  # not in the contract
+
+
 # ---------------------------------------------------------------------------
 # 3. With technical annexes (law colleague's answer 2)
 # ---------------------------------------------------------------------------

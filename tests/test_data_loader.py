@@ -143,8 +143,20 @@ def test_unknown_operator_is_reported(data_copy):
 
 def test_unknown_citation_is_reported(data_copy):
     """A clause citing an ID that is not in sources.yaml is reported."""
-    break_file(data_copy, "clauses.yaml", "citations: [CO_374, CO_375_1_TO_2]", "citations: [CO_374, CO_999]")  # unknown ID
+    break_file(data_copy, "clauses.yaml", "citations: [CO_374, CO_375_1_TO_2,", "citations: [CO_374, CO_999,")  # unknown ID
     assert "clause PRICE_ESTIMATE: unknown citation 'CO_999'" in error_message(data_copy)  # clear message
+
+
+def test_unknown_citation_of_a_rule_case_is_reported(data_copy):
+    """A case of a rule citing an ID that is not in sources.yaml is reported, with the case number."""
+    break_file(data_copy, "rules.yaml", "citations: [BGE_115_II_460, BGER_4A_15_2011]", "citations: [BGE_999]")  # unknown ID
+    assert "W_PRICE, case 1: unknown citation 'BGE_999'" in error_message(data_copy)  # clear message
+
+
+def test_court_decision_with_empty_link_is_reported(data_copy):
+    """A court decision needs its own link, otherwise "See court decision" would lead nowhere."""
+    break_file(data_copy, "sources.yaml", 'url: "https://servat.unibe.ch/dfr/bge/c2104314.html"', 'url: ""')  # empty link
+    assert "citation BGE_104_II_314: 'url' must be a non-empty text" in error_message(data_copy)  # clear message
 
 
 def test_placeholder_missing_from_inputs_is_reported(data_copy):
@@ -191,7 +203,7 @@ def test_rule_without_message_is_reported(data_copy):
 def test_all_mistakes_are_reported_at_once(data_copy):
     """Two mistakes in two files are both listed in one error message."""
     break_file(data_copy, "rules.yaml", "{field: estimate_basis, op: is_empty}", "{field: estimat_basis, op: is_empty}")  # mistake 1
-    break_file(data_copy, "clauses.yaml", "citations: [CO_374, CO_375_1_TO_2]", "citations: [CO_374, CO_999]")  # mistake 2
+    break_file(data_copy, "clauses.yaml", "citations: [CO_374, CO_375_1_TO_2,", "citations: [CO_374, CO_999,")  # mistake 2
     message = error_message(data_copy)  # load and get the message
     assert "unknown field 'estimat_basis'" in message  # mistake 1 is listed
     assert "unknown citation 'CO_999'" in message  # mistake 2 is listed too

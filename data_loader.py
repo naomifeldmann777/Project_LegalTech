@@ -124,7 +124,7 @@ def load_knowledge(data_dir=None):
     # turn every list of entries into a dictionary {ID: entry}; duplicate IDs are reported
     knowledge = {
         "law_version": sources_file.get("law_version"),  # e.g. "2026-10-01"
-        "sources": _index(sources_file, "sources", "sources.yaml", problems),  # S1, S2, S4
+        "sources": _index(sources_file, "sources", "sources.yaml", problems),  # S1, S2, S4, BGER
         "citations": _index(sources_file, "citations", "sources.yaml", problems),  # CO_363, ...
         "sections": _index(parameters_file, "sections", "parameters.yaml", problems),  # questionnaire blocks
         "fields": _index(parameters_file, "fields", "parameters.yaml", problems),  # the questions
@@ -334,7 +334,7 @@ def _check_sources(knowledge, problems):
     """Check sources.yaml: law_version, sources and citations."""
     if not isinstance(knowledge["law_version"], str):  # must be text such as "2026-10-01"
         problems.append('sources.yaml: \'law_version\' must be text in quotes, e.g. "2026-10-01"')  # report it
-    for source_id, source in knowledge["sources"].items():  # each source (S1, S2, S4)
+    for source_id, source in knowledge["sources"].items():  # each source (S1, S2, S4, BGER)
         _require_text(source, ("title", "url"), f"sources.yaml, source {source_id}", problems)  # needs a title and a link
         reading_aid = source.get("reading_aid")  # optional link to another source
         if reading_aid is not None and reading_aid not in knowledge["sources"]:  # points to an unknown source
@@ -342,8 +342,10 @@ def _check_sources(knowledge, problems):
     for citation_id, citation in knowledge["citations"].items():  # each citation (CO_363, ...)
         where = f"sources.yaml, citation {citation_id}"  # location used in the messages
         _require_text(citation, ("article", "label"), where, problems)  # needs an article and a display label
-        if citation.get("source") not in knowledge["sources"]:  # must point to S1, S2 or S4
+        if citation.get("source") not in knowledge["sources"]:  # must point to a source above
             problems.append(f"{where}: source '{citation.get('source')}' is not a known source")  # report it
+        if "url" in citation:  # a court decision has its own link
+            _require_text(citation, ("url", "summary"), where, problems)  # the link and the sentence explaining it
 
 
 def _check_parameters(knowledge, problems):
@@ -510,6 +512,8 @@ def _check_message_rule(rule_id, rule, knowledge, where, problems):
             problems.append(f"{case_where}: must contain 'when' and 'field' or 'check'")  # report it
             continue  # go to the next case
         _check_condition(case.get("when"), knowledge, f"{case_where}, when", problems)  # check the condition
+        if "citations" in case:  # optional: extra legal basis of this case only
+            _check_citations(case["citations"], knowledge, case_where, problems)  # legal basis must exist
         check = case.get("check")  # optional name of a special check in checks.py (D42)
         if check is not None and (not isinstance(check, str) or not check.strip()):  # must be a name
             problems.append(f"{case_where}: 'check' must be the name of a function in checks.py")  # report it

@@ -345,9 +345,13 @@ def citation_line(citation_id, knowledge):
     The label links to the legal text itself. Extra links: the English translation
     for the German Code of Obligations (S1 -> reading aid S2), and the SECO guidance
     next to the UWG on Fedlex (S4, law packet Task 1: "the statute is the legal source").
+    A court decision has its own link instead: its explanation, then "See court decision".
     Example: "[Art. 374 CO](...): no fixed price means ... (Swiss Code of Obligations SR 220) · [English translation](...)"
+    Example: "BGE 115 II 460 (1989): the 10 % tolerance ... [See court decision](...)"
     """
     citation = knowledge["citations"][citation_id]  # from sources.yaml, e.g. CO_374
+    if citation.get("url"):  # a court decision: it has its own link
+        return f"{citation['label']}: {citation['summary']} [See court decision]({citation['url']})"  # one Markdown line
     source = knowledge["sources"][citation["source"]]  # the document it is in, e.g. S1
     law_url = source.get("url_statutory_text") or source["url"]  # the statute itself if a separate link exists
     line = f"[{citation['label']}]({law_url}): {citation['summary']} ({source['title']})"  # the main part

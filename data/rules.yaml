@@ -32,6 +32,8 @@
 #               check    optional: name of a special check in checks.py; the case then
 #                        fires once for every field the check reports
 #               message  optional: replaces the rule's "message" for this case
+#               citations  optional: extra legal basis of this case only, added to the
+#                        rule's "citations" (e.g. a court decision on this case alone)
 # CONDITIONS ("when") are written as data, never as Python code (decision D6):
 #   {field: X, op: OP, value: V}   compare the answer of field X with V
 #     OP = equals, not_equals, less_than, at_most, greater_than, at_least, one_of
@@ -100,6 +102,7 @@ rules:
             - {field: price_type, op: equals, value: estimate}
             - {field: estimate_basis, op: is_empty}
         field: estimate_basis                 # message next to the basis
+        citations: [BGER_4A_15_2011]          # research document, section 6: "Ask how the estimate was calculated"
 
   # --- R_PAY (App. C): invalid milestone schedule ------------------------------
   - id: R_PAY                                 # rule ID from App. C
@@ -131,6 +134,7 @@ rules:
       - when: {field: price_type, op: equals, value: estimate}  # an estimate was chosen
         field: price_type                     # message next to the price type
         message: "The price is approximate, not a fixed ceiling. The final remuneration may differ under the agreed pricing basis. Statutory overrun remedies remain reserved."
+        citations: [BGE_115_II_460, BGER_4A_15_2011]  # research document, section 6: estimate overruns; not for the advance case below
       - when: {field: payment_type, op: equals, value: milestones}  # only for milestone payments
         check: any_advance_milestone          # at least one milestone has advance = true
         message: "This payment is due before its corresponding work is performed. Paying early creates a funding risk if that work is not completed."

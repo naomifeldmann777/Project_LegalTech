@@ -477,6 +477,45 @@ def test_review_record_contains_what_the_handoff_asks_for(knowledge):
     assert record["slot"] == "payment_clause" and record["position"] == 2  # where it goes
 
 
+def test_court_decisions_of_the_fixed_price_clause(knowledge):
+    """PRICE_FIXED cites the decisions on Art. 373 para. 2 CO, each with its own link (research document, section 6)."""
+    record = run(knowledge)["selected_clauses"][0]  # the price clause of the valid project
+    citations = {c["citation_id"]: c for c in record["citations"]}  # by ID
+    assert list(citations) == ["CO_363", "CO_373_1_TO_3", "BGE_104_II_314", "BGE_113_II_513"]  # statute first, then decisions
+    assert citations["BGE_104_II_314"]["url"] == "https://servat.unibe.ch/dfr/bge/c2104314.html"  # the decision's own link
+    assert citations["BGE_104_II_314"]["source_id"] == "BGER" and citations["BGE_104_II_314"]["summary"]  # source and sentence
+    assert "fedlex" in citations["CO_363"]["url"]  # a statute still links to the official text
+
+
+def test_court_decisions_of_the_estimate_clause(knowledge):
+    """PRICE_ESTIMATE cites the decisions on estimate overruns under Art. 375 CO."""
+    record = run(knowledge, price_type="estimate", estimate_basis="Hourly rates")["selected_clauses"][0]  # the price clause
+    assert [c["citation_id"] for c in record["citations"]] == ["CO_374", "CO_375_1_TO_2", "BGE_115_II_460", "BGER_4A_15_2011"]
+
+
+def test_payment_clauses_cite_no_court_decision(knowledge):
+    """The research document names no decision on Art. 372 CO, so payment clauses cite the statute only."""
+    record = run(knowledge)["selected_clauses"][1]  # the payment clause of the valid project
+    assert [c["citation_id"] for c in record["citations"]] == ["CO_372_1_TO_2"]  # no decision
+
+
+def test_case_citations_only_appear_on_their_own_case(knowledge):
+    """W_PRICE: the decisions on estimates are shown at the estimate warning, not at the advance warning."""
+    result = run(knowledge, price_type="estimate", estimate_basis="Hourly rates", payment_type="milestones",
+                 milestones=[row("20", advance=True), row("80")])  # both W_PRICE cases fire
+    estimate, advance = [w for w in result["warnings"] if w["rule_id"] == "W_PRICE"]  # in the order of rules.yaml
+    assert estimate["citations"] == ["CO_374", "CO_375", "BGE_115_II_460", "BGER_4A_15_2011"]  # rule's plus the case's
+    assert advance["citations"] == ["CO_374", "CO_375"]  # only the rule's own
+
+
+def test_r_price_decision_only_at_the_missing_estimate_basis(knowledge):
+    """R_PRICE: 4A_15/2011 is shown at the missing estimate basis, not at a price that is not positive."""
+    result = run(knowledge, price_type="estimate", estimate_basis="", contract_price=Decimal("0"))  # both cases fire
+    entries = {e["field"]: e for e in result["errors"] if e["rule_id"] == "R_PRICE"}  # by question
+    assert entries["contract_price"]["citations"] == ["CO_374"]  # only the rule's own
+    assert entries["estimate_basis"]["citations"] == ["CO_374", "BGER_4A_15_2011"]  # rule's plus the case's
+
+
 def test_review_record_text_is_filled(knowledge):
     """The selected clause texts have every gap filled."""
     result = run(knowledge)  # the valid project

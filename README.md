@@ -72,7 +72,7 @@ placeholders.py            fills the {placeholders} of a clause; CHF / date form
 generator.py               fills the Word template and returns the contract as bytes
 data_loader.py             reads the 4 YAML files and checks them for mistakes
 data/
-  sources.yaml             legal sources (S1, S2, S4) and article citations
+  sources.yaml             legal sources (S1, S2, S4, BGER) and citations: articles and court decisions
   parameters.yaml          the questions: types, allowed answers, help texts, when shown / required
   clauses.yaml             topics, slots, the clause texts, derived texts (VAT sentence, milestone rows)
   rules.yaml               the rules: R_ (errors), W_ (warnings), SEL_ (clause selection)
@@ -148,6 +148,15 @@ Operators: `equals`, `not_equals`, `less_than`, `at_most`, `greater_than`, `at_l
 `one_of`, `is_empty`, `is_filled`; combine with `all`, `any`, `not`. No Python code is needed.
 A check that has to go through a table or count things needs a small function in
 `checks.py` (listed in `CHECKS` at the end of the file) that the rule names with `check:`.
+
+### Add a court decision
+1. `data/sources.yaml`: add a citation with `source: BGER`, the `article` it interprets, a
+   `label`, a one-sentence `summary` and its own `url`.
+2. Add its ID to the `citations` of the clause or rule. If it only concerns one case of a
+   rule, put `citations: [ID]` on that case instead.
+
+The review screen and the messages then show the sentence and a "See court decision" link.
+Decisions never appear in the contract.
 
 ### Add a question
 Add a field to `data/parameters.yaml` (`id`, `section`, `type`, `question`, `required`,

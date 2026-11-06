@@ -73,7 +73,9 @@ clauses:
       section 10. The statutory relief available under Article 373 paragraph 2 CO
       remains reserved.
     inputs: [contract_price, vat_treatment_text]  # placeholders used in "text" (App. D "Inputs")
-    citations: [CO_363, CO_373_1_TO_3]        # legal basis for the review screen (IDs from sources.yaml, law packet Task 2)
+    # legal basis for the review screen (IDs from sources.yaml): law packet Task 2, plus the
+    # court decisions on Art. 373 para. 2 CO, which this clause reserves (research document, section 6)
+    citations: [CO_363, CO_373_1_TO_3, BGE_104_II_314, BGE_113_II_513]
     basis_note: "CO 363 and 373; written change process is a product choice."  # App. D "Basis" line, review screen only
     metadata:                                 # safety flags read by the LAW checks (App. C); true = the clause does not interfere
       notices_preserved: true                 # defect notice periods are not shortened
@@ -98,7 +100,8 @@ clauses:
       expected overrun and explain its cause and amount. The Client’s rights under
       Article 375 CO remain reserved.
     inputs: [contract_price, vat_treatment_text, estimate_basis]  # App. D "Inputs"
-    citations: [CO_374, CO_375_1_TO_2]        # law packet Task 2
+    # law packet Task 2, plus the court decisions on estimate overruns under Art. 375 CO (research document, section 6)
+    citations: [CO_374, CO_375_1_TO_2, BGE_115_II_460, BGER_4A_15_2011]
     basis_note: "CO 374–375; added notice process is contractual."  # App. D "Basis" line
     metadata:                                 # App. C safety flags, all true (law packet Task 6)
       notices_preserved: true

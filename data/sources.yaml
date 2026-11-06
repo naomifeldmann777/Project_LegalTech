@@ -15,6 +15,8 @@
 #   - Law packet Task 2: citations of the 4 clauses and the topic 1 rules
 #   - Legal handoff note sheet 1 "Articles" and "Consumer point": citation summaries
 #   - Diagrams PDF chapter 8: ER entities LEGAL_SOURCE and CITATION
+#   - Research document "Price, Payment and Termination" (Nicholas, 4 Nov 2026),
+#     section 6 and sources list: court decisions, their meaning and their links
 # Scope: iteration 1, topic 1 "Price and payment" only. Later topics add entries.
 # =============================================================================
 
@@ -61,6 +63,15 @@ sources:
     # link to the law itself (UWG, SR 241) on Fedlex; law packet Task 1: "the statute is the legal source"
     # optional key, used only by S4
     url_statutory_text: "https://www.fedlex.admin.ch/eli/cc/1988/223_223_223/de"  # given by the law student (L1)
+
+  # --- BGER: court decisions (research document, not part of handoff App. F) --
+  - id: BGER                                  # own ID instead of a number, so it cannot collide with the App. F register
+    title: "Swiss Federal Supreme Court decisions"  # the court behind every decision below
+    # from the research document: the decisions were read through English summaries and translation
+    note: "Published only in German or Italian. The exact wording should be checked in the original."
+    version_date: null                        # each decision has its own date, in its label
+    accessed_on: 2026-11-06                   # the day the links of the decisions below were opened and checked
+    url: "https://www.bger.ch"                # the court's website; each decision has its own link in its citation
 
 # -----------------------------------------------------------------------------
 # Citations (ER entity CITATION): one entry per article or paragraph range,
@@ -134,3 +145,47 @@ citations:
     label: "Art. 8 UWG"                       # shown on the review screen
     # copied from handoff note sheet 1 "Consumer point" (without the "[S4]" marker)
     summary: "Review one-sided standard terms under UWG 8 where the Client qualifies as a consumer; private status alone is not a complete legal assessment."
+
+  # ---------------------------------------------------------------------------
+  # Court decisions: citations with their own "url". The review screen shows the
+  # label, the one-sentence summary and a "See court decision" link.
+  # "article" and "paragraph" name the CO article the decision interprets.
+  # Each summary is shortened from the research document, section 6, and was
+  # compared with the decision text. NOT YET APPROVED by the law student.
+  # ---------------------------------------------------------------------------
+
+  # BGE 104 II 314 - used by clause PRICE_FIXED (it reserves Art. 373 para. 2 CO)
+  - id: BGE_104_II_314                        # citation ID: the decision's reference
+    source: BGER                              # Federal Supreme Court
+    article: "373"                            # the article the decision interprets
+    paragraph: "2"                            # extraordinary circumstances
+    label: "BGE 104 II 314 (1978)"            # shown on the review screen
+    summary: "a court raises a fixed price only if there is a gross, obvious imbalance between the value of the work and the price; the test is strict because every fixed price involves some speculation."  # research document, section 6
+    url: "https://servat.unibe.ch/dfr/bge/c2104314.html"  # link from the research document (full text, German)
+
+  # BGE 113 II 513 - used by clause PRICE_FIXED (it reserves Art. 373 para. 2 CO)
+  - id: BGE_113_II_513                        # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "373"                            # the article the decision interprets
+    paragraph: "2"                            # extraordinary circumstances
+    label: "BGE 113 II 513 (1987)"            # shown on the review screen
+    summary: "in a unit-price contract, twice the planned quantity alone did not justify a higher price, but a deadline shortened after an accident could."  # research document, section 6
+    url: "https://www.servat.unibe.ch/dfr/bge/c2113513.html"  # link from the research document (full text, Italian)
+
+  # BGE 115 II 460 - used by clause PRICE_ESTIMATE and the estimate case of rule W_PRICE
+  - id: BGE_115_II_460                        # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "375"                            # the article the decision interprets
+    paragraph: "2"                            # price reduction for building on the Client's land
+    label: "BGE 115 II 460 (1989)"            # shown on the review screen
+    summary: "the 10 % tolerance for an estimate overrun is only a rule of thumb, not a rigid scheme; the court accepted 20 % where the estimate was rough and the Client had expertise."  # research document, section 6
+    url: "https://app.omnilex.ai/de/sources/court-decision/ch-bge--115-ii-460/tolerance-threshold-for-cost-overruns-in-construction-contracts"  # link from the research document
+
+  # 4A_15/2011 - used by clause PRICE_ESTIMATE and the estimate cases of rules R_PRICE and W_PRICE
+  - id: BGER_4A_15_2011                       # citation ID (not published in the BGE collection, so no "BGE" in the name)
+    source: BGER                              # Federal Supreme Court
+    article: "375"                            # the article the decision applies by analogy
+    paragraph: null                           # whole article
+    label: "4A_15/2011 (2011)"                # shown on the review screen
+    summary: "the limit of an overrun depends on what the Client could rely on; Art. 375 CO can apply by analogy to a non-binding estimate given to inform the Client."  # research document, section 6
+    url: "https://app.omnilex.ai/de/sources/court-decision/ch-bger--4a-15-2011/4a152011"  # link from the research document
