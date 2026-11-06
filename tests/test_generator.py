@@ -59,6 +59,7 @@ def p1_answers():
         "contract_price": Decimal("100000.00"),  # CHF 100,000.00
         "vat_treatment": "included",  # VAT included
         "payment_type": "on_completion",  # payment on delivery
+        "termination_reasons": False,  # no extra grounds: statutory baseline
         "contractor_signatory_name": "Max Muster",  # who signs
         "contractor_signatory_capacity": "Managing director",  # in which capacity
     }  # end of the answers
@@ -127,11 +128,32 @@ def test_p1_contract_has_no_open_gaps(knowledge):
     assert "{" not in text and "}" not in text  # P1 has no braces in its answers, so none may remain
 
 
-def test_sections_6_to_9_show_the_marker(knowledge):
-    """The four sections of topics 2-5 show the prototype marker (law packet Task 14, D33)."""
+def test_sections_6_to_8_show_the_marker(knowledge):
+    """The three sections of topics 2-4 show the prototype marker (law packet Task 14, D33)."""
     text = contract_text(generate(p1_answers(), knowledge))  # generate and read back
-    assert text.count("Not generated in this prototype.") == 4  # sections 6, 7, 8 and 9
+    assert text.count("Not generated in this prototype.") == 3  # sections 6, 7 and 8
     assert "7 Inspection, acceptance and defects" in text  # heading with the comma (consistency c)
+
+
+def test_section_9_contains_the_statutory_termination_clause(knowledge):
+    """P1: TERMINATION_LAW stands in section 9, between its heading and section 10 (skeleton, App. D)."""
+    text = contract_text(generate(p1_answers(), knowledge))  # generate and read back
+    start = text.index("Before the Works are complete, the Client may terminate under Article 377 CO")  # the clause
+    assert text.index("9 Termination") < start < text.index("10 Changes to the Works")  # in section 9
+    assert "Statutory defect rights and liabilities relating to completed work survive as applicable." in text  # its end
+    assert "In addition, the non-breaching party" not in text  # not the other clause
+
+
+def test_section_9_contains_the_termination_for_cause_clause(knowledge):
+    """With special grounds, TERMINATION_FOR_CAUSE stands in section 9 with both gaps filled (E7)."""
+    answers = p1_answers()  # start from P1
+    answers.update(termination_reasons=True, cure_period_days=30,  # special grounds and the period
+                   selected_termination_reasons=["contractor_material_nonperformance", "client_material_nonpayment"])  # both grounds
+    text = contract_text(generate(answers, knowledge))  # generate and read back
+    assert ("may terminate for the following material breaches: the Contractor’s material failure to perform the agreed "
+            "Works; the Client’s material failure to pay an amount properly due, subject to lawful payment defences.") in text  # App. D
+    assert "allow at least 30 calendar days after receipt to cure" in text  # the period
+    assert "{" not in text and "}" not in text  # no gap left
 
 
 def test_p2_contract_contains_the_milestone_schedule(knowledge):
@@ -161,7 +183,7 @@ def test_no_sources_reasons_or_warnings_in_the_contract(knowledge):
 def test_no_court_decisions_in_the_contract(knowledge):
     """Court decisions are legal basis for the review screen only, for fixed prices and for estimates."""
     estimate = {**p2_answers(), "price_type": "estimate", "estimate_basis": "Hourly rates and materials at cost"}  # second price clause
-    for answers in (p2_answers(), estimate):  # both price clauses cite decisions
+    for answers in (p2_answers(), estimate):  # both price clauses cite decisions; the termination clause too
         text = contract_text(generate(answers, knowledge))  # the finished contract
         for piece in ["BGE", "4A_15", "servat.unibe", "omnilex", "See court decision", "bger.ch"]:  # labels, links and link text
             assert piece not in text, piece  # not in the contract

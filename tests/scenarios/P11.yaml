@@ -12,7 +12,7 @@ answers:                                      # what differs from base_project.y
   estimate_basis: "Labour at CHF 95 per hour plus evidenced materials and expenses"  # pricing basis
 expected:                                     # the result the engine must give
   can_generate: true                          # no error
-  clauses: [PRICE_ESTIMATE, PAYMENT_ON_COMPLETION]  # REF02
+  clauses: [PRICE_ESTIMATE, PAYMENT_ON_COMPLETION, TERMINATION_LAW]  # REF02
   errors: []                                  # no errors
   warnings: [W_PRICE, W_CONSUMER]             # REF02: W_PRICE and W_CONSUMER
   contract_text_contains:                     # the basis is put into the clause

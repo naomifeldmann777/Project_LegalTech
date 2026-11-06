@@ -18,6 +18,8 @@
 #     payment clause), metadata flags
 #   - Law packet (Legal_Todo_Responses_EN): new PRICE_FIXED wording (page 6),
 #     review titles (Task 8), citations (Task 2), milestone rows (page 7)
+#   - Research document "Price, Payment and Termination" (Nicholas, 4 Nov 2026):
+#     only the court decisions (citations)
 #   - Diagrams PDF chapter 8: ER entities TOPIC and CLAUSE
 # Decisions used: D10, D23, D24, D30, D31, D36, R5, D39 (clause texts from the
 #   handoff; PRICE_FIXED from the law packet to avoid repeating section 10) and
@@ -28,12 +30,15 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Topics (ER entity TOPIC). Iteration 1 has topic 1 only; topics 2-5 come later.
+# Topics (ER entity TOPIC). Topics 1 and 5 are built; topics 2-4 come later.
 # -----------------------------------------------------------------------------
 topics:
   - id: PRICE_PAYMENT                         # topic ID (decision D9); never change it
     name: "Price and payment"                 # name shown on the review screen (handoff note sheet 1)
     order_in_contract: 1                      # orders the review screen (D31); the contract order comes from the skeleton
+  - id: TERMINATION                           # topic 5
+    name: "Termination"                       # handoff note sheet 5
+    order_in_contract: 5                      # the number of the note sheet, so topics 2-4 fit in between
 
 # -----------------------------------------------------------------------------
 # Slots: the places in the Word template where a selected clause is put
@@ -47,6 +52,9 @@ slots:
     max: 1                                    # ... and at most 1
   - id: payment_clause                        # skeleton section 5
     min: 1                                    # App. C: exactly one payment variant
+    max: 1                                    # at most 1
+  - id: termination_clause                    # skeleton section 9
+    min: 1                                    # App. C: exactly one termination variant
     max: 1                                    # at most 1
 
 # -----------------------------------------------------------------------------
@@ -156,6 +164,68 @@ clauses:
       own_intent_gross_preserved: true
       statutory_exit_preserved: true
 
+  # --- TERMINATION_LAW (handoff App. D) ---------------------------------------
+  - id: TERMINATION_LAW                       # clause ID from App. D (selected by SEL_TERMINATION_LAW)
+    topic: TERMINATION                        # topic 5
+    slot: termination_clause                  # place in skeleton section 9
+    title: "Statutory termination"            # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      Before the Works are complete, the Client may terminate under Article 377 CO by
+      paying for work already performed and fully indemnifying the Contractor as required
+      by law. The parties shall document completed work, payments, usable materials and
+      the basis of any further claim; this record does not predetermine its legal amount.
+      Rights and consequences under Articles 107–109, 366, 373 paragraph 2, 375–376 and
+      378–379 CO remain reserved where their conditions are met. Statutory defect rights
+      and liabilities relating to completed work survive as applicable.
+    inputs: []                                # App. D "Inputs: None"
+    # App. D "Basis": CO 377 and the listed provisions, plus the court decision on Art. 377 CO (research document, section 6)
+    citations: [CO_377, CO_107_TO_109, CO_366_1, CO_373_2, CO_375, CO_376, CO_378, CO_379, BGE_117_II_273]
+    basis_note: "CO 377 and the listed statutory exit/risk provisions."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true ("all true in this library")
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- TERMINATION_FOR_CAUSE (handoff App. D) ---------------------------------
+  - id: TERMINATION_FOR_CAUSE                 # clause ID from App. D (selected by SEL_TERMINATION_FOR_CAUSE)
+    topic: TERMINATION                        # topic 5
+    slot: termination_clause                  # same slot as TERMINATION_LAW; only one of them is selected
+    title: "Termination for cause"            # team draft from the App. D heading, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      Before the Works are complete, the Client may terminate under Article 377 CO by
+      paying for work already performed and fully indemnifying the Contractor as required
+      by law. The parties shall document completed work, payments, usable materials and
+      the basis of any further claim; this record does not predetermine its legal amount.
+      Rights and consequences under Articles 107–109, 366, 373 paragraph 2, 375–376 and
+      378–379 CO remain reserved where their conditions are met. Statutory defect rights
+      and liabilities relating to completed work survive as applicable. In addition, the
+      non-breaching party may terminate for the following material breaches:
+      {termination_reason_text}. It must give a notice identifying the breach and allow at
+      least {cure_period_days} calendar days after receipt to cure, or a longer period
+      where needed to be reasonable. If the breach remains uncured, it may give a further
+      termination notice. Statutory rights to act without a cure period remain reserved.
+      Settlement and any damages follow the applicable legal basis; this clause creates no
+      automatic cancellation fee.
+    inputs: [termination_reason_text, cure_period_days]  # App. D "Inputs"
+    # the same list as TERMINATION_LAW, because this clause reserves the same articles (team decision;
+    # the App. D "Basis" line names only CO 107–109 and 377), plus the court decision on Art. 377 CO
+    citations: [CO_377, CO_107_TO_109, CO_366_1, CO_373_2, CO_375, CO_376, CO_378, CO_379, BGE_117_II_273]
+    basis_note: "CO 107–109 and 377; additional grounds and procedure are contractual."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
 # -----------------------------------------------------------------------------
 # Derived placeholders (decision D10): texts the user does not type; they are
 # built from answers. placeholders.py builds them, but all fixed wording is here.
@@ -177,6 +247,17 @@ derived_placeholders:
     text_by_answer:                           # App. D, word for word
       fixed: "The schedule allocates the fixed price."
       estimate: "These are advances against the final price. Any balance is paid, or excess refunded, on final reconciliation at delivery."
+
+  # --- termination_reason_text (App. D "Deterministic text assembly") ----------
+  - id: termination_reason_text               # placeholder used in TERMINATION_FOR_CAUSE
+    built_from: [selected_termination_reasons]  # the grounds the user selected
+    chosen_by: selected_termination_reasons   # several answers are possible, so their texts are joined
+    # App. D: "Join selected approved phrases" (no join word given). "; " keeps the grounds as
+    # separate alternatives; "and" could read as if both were needed. NOT YET APPROVED by the law student.
+    join_with: "; "                           # only needed when "chosen_by" is an enum_list field
+    text_by_answer:                           # App. D, word for word; printed in this order
+      contractor_material_nonperformance: "the Contractor’s material failure to perform the agreed Works"
+      client_material_nonpayment: "the Client’s material failure to pay an amount properly due, subject to lawful payment defences"
 
   # --- milestones_schedule (App. D; row wording from law packet page 7) --------
   # App. D: "Numbered rows with each name, trigger, percentage, CHF amount and

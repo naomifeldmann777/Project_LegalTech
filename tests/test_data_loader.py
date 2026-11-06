@@ -196,6 +196,32 @@ def test_rule_without_message_is_reported(data_copy):
     assert "R_CROSS, case 1: no message" in error_message(data_copy)  # clear message
 
 
+def test_derived_text_for_several_answers_needs_join_with(data_copy):
+    """A derived text chosen by an enum_list field must say how its texts are joined."""
+    break_file(data_copy, "clauses.yaml", 'join_with: "; "', 'joined_with: "; "')  # the key is misspelled
+    assert "derived placeholder termination_reason_text: 'join_with' must be a non-empty text" in error_message(data_copy)  # clear message
+
+
+def test_derived_text_for_several_answers_needs_every_answer(data_copy):
+    """Every answer of an enum_list field needs its own approved text."""
+    break_file(data_copy, "clauses.yaml", 'client_material_nonpayment: "the Client', 'client_nonpayment: "the Client')  # wrong answer
+    assert "needs exactly one text for each answer of selected_termination_reasons" in error_message(data_copy)  # clear message
+
+
+def test_enum_list_needs_allowed_values(data_copy):
+    """An enum_list field without answers is reported, like an enum."""
+    break_file(data_copy, "parameters.yaml", "allowed_values:                           # App. B: contractor_material_nonperformance",
+               "no_values:                                # App. B: contractor_material_nonperformance")  # the key is misspelled
+    assert "field selected_termination_reasons: an enum needs 'allowed_values'" in error_message(data_copy)  # clear message
+
+
+def test_enum_list_is_not_allowed_as_a_table_column(data_copy):
+    """A table cell holds one value, so a column cannot be an enum_list."""
+    break_file(data_copy, "parameters.yaml", "type: boolean                         # starts unanswered (None); false is a valid answer",
+               "type: enum_list                       # starts unanswered (None); false is a valid answer")  # the advance column
+    assert "column advance: unknown or not allowed type 'enum_list'" in error_message(data_copy)  # clear message
+
+
 # ---------------------------------------------------------------------------
 # 4. Several mistakes are reported together
 # ---------------------------------------------------------------------------

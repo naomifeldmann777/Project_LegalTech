@@ -4,8 +4,8 @@ What this file is for:
     It applies the rules of rules.yaml to the user's answers. It follows the order
     of the diagrams PDF, chapter 2:
         step 0  keep only the active answers; inactive and unknown answers are ignored
-        step 1  input errors        R_SCOPE, R_REQUIRED, R_PRICE, R_PAY
-        step 2  warnings            W_PRICE, W_CONSUMER
+        step 1  input errors        R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, R_TERM
+        step 2  warnings            W_PRICE, W_CONSUMER, W_CURE
                 -> if step 1 found an error, stop here (decision D17)
         step 3  select clauses      the SEL_ rules
         step 4  fill placeholders   placeholders.py; a gap that stays empty = R_REQUIRED

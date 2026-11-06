@@ -50,7 +50,7 @@ def _scenario_number(path):
     return int(path.stem[1:])  # "P10" -> 10
 
 
-SCENARIO_FILES = sorted(SCENARIO_DIR.glob("P*.yaml"), key=_scenario_number)  # P1.yaml, P2.yaml, ..., P15.yaml
+SCENARIO_FILES = sorted(SCENARIO_DIR.glob("P*.yaml"), key=_scenario_number)  # P1.yaml, P2.yaml, ..., P21.yaml
 
 
 # ---------------------------------------------------------------------------

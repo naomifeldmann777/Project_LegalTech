@@ -1,0 +1,20 @@
+# =============================================================================
+# P18.yaml - test scenario P18: special termination grounds without a selected ground
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (R_TERM: "without supported reasons"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P18                                       # scenario ID, same as the file name
+title: "Special grounds without a selected ground"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  termination_reasons: true                   # special grounds
+  selected_termination_reasons: []            # no ground selected
+  cure_period_days: 30                        # a positive period
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_TERM]                            # App. C
+  error_fields:                               # where the error is shown
+    R_TERM: [selected_termination_reasons]    # next to the grounds
+  warnings: [W_CONSUMER, W_CURE]              # still shown (Q6)

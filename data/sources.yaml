@@ -10,14 +10,16 @@
 #   the link. Sources are NEVER printed in the contract text (handoff App. C,
 #   "Review record required for every selected clause").
 # Which documents it implements:
-#   - Legal handoff Appendix F: source register (S1, S2, S4)
+#   - Legal handoff Appendix F: source register (S1, S2, S4); its S5 (BGE 117 II 273) is
+#     kept under BGER with the other court decisions (team decision)
 #   - Law packet (Legal_Todo_Responses_EN) Task 1: S4 keeps two links
 #   - Law packet Task 2: citations of the 4 clauses and the topic 1 rules
 #   - Legal handoff note sheet 1 "Articles" and "Consumer point": citation summaries
+#   - Legal handoff note sheet 5 "Articles" and "Consumer point": summaries of the topic 5 citations
 #   - Diagrams PDF chapter 8: ER entities LEGAL_SOURCE and CITATION
 #   - Research document "Price, Payment and Termination" (Nicholas, 4 Nov 2026),
 #     section 6 and sources list: court decisions, their meaning and their links
-# Scope: iteration 1, topic 1 "Price and payment" only. Later topics add entries.
+# Scope: topic 1 "Price and payment" and topic 5 "Termination". Later topics add entries.
 # =============================================================================
 
 # Version of the legal basis used by this rule package (decision D12).
@@ -77,7 +79,7 @@ sources:
 # Citations (ER entity CITATION): one entry per article or paragraph range,
 # exactly as the law packet (Task 2) lists them (decisions D11 and R5).
 # Article and paragraph are stored separately from the source URL (handoff App. F).
-# Only the citations used by topic 1 clauses and rules are listed here.
+# Only the citations used by the clauses and rules of topics 1 and 5 are listed here.
 # -----------------------------------------------------------------------------
 citations:
 
@@ -121,7 +123,7 @@ citations:
     label: "Art. 374 CO"                      # shown on the review screen
     summary: "no fixed price means value of work and Contractor expenses."  # note sheet 1
 
-  # Art. 375 CO, whole article - used by rule W_PRICE (packet: "S1 CO 374-375")
+  # Art. 375 CO, whole article - used by rule W_PRICE (packet: "S1 CO 374-375") and clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
   - id: CO_375                                # citation ID
     source: S1                                # Code of Obligations
     article: "375"                            # article number
@@ -145,6 +147,76 @@ citations:
     label: "Art. 8 UWG"                       # shown on the review screen
     # copied from handoff note sheet 1 "Consumer point" (without the "[S4]" marker)
     summary: "Review one-sided standard terms under UWG 8 where the Client qualifies as a consumer; private status alone is not a complete legal assessment."
+
+  # ---------------------------------------------------------------------------
+  # Topic 5 "Termination": the articles named in App. C (rules) and App. D ("Basis"
+  # lines and the statutory reservation in the termination clauses). Summaries are
+  # copied from handoff note sheet 5.
+  # ---------------------------------------------------------------------------
+
+  # Art. 107-108 CO - used by rule W_CURE (App. C: "CO 107–108")
+  - id: CO_107_TO_108                         # citation ID with an article range
+    source: S1                                # Code of Obligations
+    article: "107-108"                        # article range as text
+    paragraph: null                           # whole articles
+    label: "Art. 107-108 CO"                  # shown on the review screen
+    summary: "default, cure and withdrawal consequences."  # note sheet 5, entry "CO 107–109"
+
+  # Art. 107-109 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE (App. D "Basis")
+  - id: CO_107_TO_109                         # citation ID with an article range
+    source: S1                                # Code of Obligations
+    article: "107-109"                        # article range as text
+    paragraph: null                           # whole articles
+    label: "Art. 107-109 CO"                  # shown on the review screen
+    summary: "default, cure and withdrawal consequences."  # note sheet 5
+
+  # Art. 366 para. 1 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE (App. D "listed statutory exit/risk provisions")
+  - id: CO_366_1                              # citation ID with one paragraph
+    source: S1                                # Code of Obligations
+    article: "366"                            # article number
+    paragraph: "1"                            # note sheet 5 names paragraph 1
+    label: "Art. 366 para. 1 CO"              # shown on the review screen
+    summary: "early withdrawal for serious performance delay."  # note sheet 5
+
+  # Art. 373 para. 2 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
+  - id: CO_373_2                              # citation ID with one paragraph
+    source: S1                                # Code of Obligations
+    article: "373"                            # article number
+    paragraph: "2"                            # extraordinary circumstances
+    label: "Art. 373 para. 2 CO"              # shown on the review screen
+    summary: "court-authorised extraordinary-circumstance relief."  # note sheet 5
+
+  # Art. 376 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
+  - id: CO_376                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "376"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 376 CO"                      # shown on the review screen
+    summary: "accidental destruction risk."   # note sheet 5
+
+  # Art. 377 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
+  - id: CO_377                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "377"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 377 CO"                      # shown on the review screen
+    summary: "Client withdrawal before completion with payment and full indemnity."  # note sheet 5
+
+  # Art. 378 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
+  - id: CO_378                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "378"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 378 CO"                      # shown on the review screen
+    summary: "impossibility arising on the Client’s side."  # note sheet 5
+
+  # Art. 379 CO - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE
+  - id: CO_379                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "379"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 379 CO"                      # shown on the review screen
+    summary: "death/incapacity of a personally essential Contractor."  # note sheet 5
 
   # ---------------------------------------------------------------------------
   # Court decisions: citations with their own "url". The review screen shows the
@@ -189,3 +261,12 @@ citations:
     label: "4A_15/2011 (2011)"                # shown on the review screen
     summary: "the limit of an overrun depends on what the Client could rely on; Art. 375 CO can apply by analogy to a non-binding estimate given to inform the Client."  # research document, section 6
     url: "https://app.omnilex.ai/de/sources/court-decision/ch-bger--4a-15-2011/4a152011"  # link from the research document
+
+  # BGE 117 II 273 - used by clauses TERMINATION_LAW and TERMINATION_FOR_CAUSE (both contain the Art. 377 CO baseline)
+  - id: BGE_117_II_273                        # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "377"                            # the article the decision interprets
+    paragraph: null                           # whole article
+    label: "BGE 117 II 273 (1991)"            # shown on the review screen
+    summary: "the Client can terminate at any time before completion, but not for free: no fault is needed, and the indemnity can include the Contractor’s lost profit; a changed building plan or financial reasons are no important reason to avoid it."  # research document, section 6; handoff App. A8
+    url: "https://servat.unibe.ch/dfr/bge/c2117273.html"  # link from the research document (full text, German)

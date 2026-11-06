@@ -210,6 +210,9 @@ def ask(field, answers):
     if field_type == "enum":  # one answer from a list
         labels = {option["value"]: option["label"] for option in field["allowed_values"]}  # stored value -> text
         return st.radio(label, list(labels), index=None, format_func=labels.get, help=help_text, key=key)  # None until chosen
+    if field_type == "enum_list":  # any number of answers from a list
+        labels = {option["value"]: option["label"] for option in field["allowed_values"]}  # stored value -> text
+        return st.multiselect(label, list(labels), format_func=labels.get, help=help_text, key=key)  # [] until chosen
     if field_type == "boolean":  # yes / no
         return st.radio(label, [True, False], index=None, format_func=YES_NO.get, horizontal=True,
                         help=help_text, key=key)  # None until chosen; False = answered "no"

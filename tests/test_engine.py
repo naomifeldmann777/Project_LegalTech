@@ -2,8 +2,8 @@
 
 What this file is for:
     It tests the rule engine piece by piece, with at least one test per rule
-    (AI_PROMPT step 11): R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, W_PRICE, W_CONSUMER,
-    the four SEL_ rules and R_CROSS. It also tests the condition operators, step 0
+    (AI_PROMPT step 11): R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, R_TERM, W_PRICE,
+    W_CONSUMER, W_CURE, the SEL_ rules and R_CROSS. It also tests the condition operators, step 0
     (inactive answers are ignored), the special checks of checks.py, and the review
     records. Every test starts from one complete, valid project (like scenario P1)
     and changes only what the test is about.
@@ -58,6 +58,7 @@ def valid_answers():
         "contract_price": Decimal("100000.00"),  # CHF 100,000.00
         "vat_treatment": "included",  # VAT included
         "payment_type": "on_completion",  # payment on delivery
+        "termination_reasons": False,  # no extra grounds: statutory baseline
         "contractor_signatory_name": "Max Bau",  # who signs
         "contractor_signatory_capacity": "Managing director",  # in which capacity
     }  # end of the answers
@@ -178,11 +179,11 @@ def test_floats_inside_milestones_are_refused(knowledge):
 # ---------------------------------------------------------------------------
 
 def test_valid_project_has_no_errors(knowledge):
-    """The P1-like project: no errors, two clauses, only W_CONSUMER."""
+    """The P1-like project: no errors, three clauses, only W_CONSUMER."""
     result = run(knowledge)  # nothing changed
     assert result["errors"] == []  # no error
     assert result["can_generate"] is True  # "Generate" allowed
-    assert clause_ids(result) == ["PRICE_FIXED", "PAYMENT_ON_COMPLETION"]  # price first, then payment
+    assert clause_ids(result) == ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]  # price, payment, termination
     assert rule_ids(result["warnings"]) == ["W_CONSUMER"]  # only the consumer warning
 
 
@@ -381,10 +382,10 @@ def test_w_consumer_always_shown_also_with_errors(knowledge):
 @pytest.mark.parametrize(  # the four combinations of price type and payment type
     "price_type, payment_type, expected",  # names of the three values
     [  # the cases
-        ("fixed", "on_completion", ["PRICE_FIXED", "PAYMENT_ON_COMPLETION"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_ON_COMPLETION
-        ("fixed", "milestones", ["PRICE_FIXED", "PAYMENT_MILESTONE"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_MILESTONE
-        ("estimate", "on_completion", ["PRICE_ESTIMATE", "PAYMENT_ON_COMPLETION"]),  # SEL_PRICE_ESTIMATE + ...
-        ("estimate", "milestones", ["PRICE_ESTIMATE", "PAYMENT_MILESTONE"]),  # both "other" variants
+        ("fixed", "on_completion", ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_ON_COMPLETION
+        ("fixed", "milestones", ["PRICE_FIXED", "PAYMENT_MILESTONE", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_MILESTONE
+        ("estimate", "on_completion", ["PRICE_ESTIMATE", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]),  # SEL_PRICE_ESTIMATE + ...
+        ("estimate", "milestones", ["PRICE_ESTIMATE", "PAYMENT_MILESTONE", "TERMINATION_LAW"]),  # both "other" variants
     ],  # end of the cases
 )  # end of parametrize
 def test_sel_rules_select_one_price_and_one_payment_clause(knowledge, price_type, payment_type, expected):
@@ -514,6 +515,141 @@ def test_r_price_decision_only_at_the_missing_estimate_basis(knowledge):
     entries = {e["field"]: e for e in result["errors"] if e["rule_id"] == "R_PRICE"}  # by question
     assert entries["contract_price"]["citations"] == ["CO_374"]  # only the rule's own
     assert entries["estimate_basis"]["citations"] == ["CO_374", "BGER_4A_15_2011"]  # rule's plus the case's
+
+
+# ---------------------------------------------------------------------------
+# 12. Topic 5 "Termination" (handoff App. B, C, D and E7)
+# ---------------------------------------------------------------------------
+
+def with_grounds(knowledge, **changes):
+    """Evaluate a valid project with special termination grounds, with some answers changed."""
+    grounds = {"termination_reasons": True, "selected_termination_reasons": ["client_material_nonpayment"],  # one ground
+               "cure_period_days": 30}  # a positive period
+    return run(knowledge, **{**grounds, **changes})  # the grounds, overwritten by the changes
+
+
+def test_no_special_grounds_selects_termination_law(knowledge):
+    """termination_reasons = false: the statutory baseline, without any gap (App. C, E1)."""
+    record = run(knowledge)["selected_clauses"][2]  # the third clause
+    assert record["clause_id"] == "TERMINATION_LAW" and record["selection_rule_id"] == "SEL_TERMINATION_LAW"  # clause and rule
+    assert record["slot"] == "termination_clause" and record["position"] == 3  # after price and payment
+    assert record["text"].startswith("Before the Works are complete, the Client may terminate under Article 377 CO")  # App. D
+    assert "{" not in record["text"]  # no gap left
+
+
+def test_special_grounds_select_termination_for_cause(knowledge):
+    """termination_reasons = true: the clause with the selected ground and the cure period (E7)."""
+    result = with_grounds(knowledge)  # a valid project with one ground
+    assert result["can_generate"] is True  # "Generate" allowed
+    record = result["selected_clauses"][2]  # the third clause
+    assert record["clause_id"] == "TERMINATION_FOR_CAUSE"  # App. C
+    assert "material breaches: the Client’s material failure to pay an amount properly due, subject to lawful payment defences." in record["text"]  # App. D
+    assert "allow at least 30 calendar days after receipt to cure" in record["text"]  # the period
+    assert "{" not in record["text"]  # no gap left
+
+
+def test_both_grounds_are_joined_in_a_fixed_order(knowledge):
+    """Two grounds: App. D phrases joined by "; ", independent of the order of the answers."""
+    reasons = ["client_material_nonpayment", "contractor_material_nonperformance"]  # selected in the "wrong" order
+    text = with_grounds(knowledge, selected_termination_reasons=reasons)["selected_clauses"][2]["text"]  # the clause
+    assert ("the Contractor’s material failure to perform the agreed Works; "  # first the Contractor's ground
+            "the Client’s material failure to pay an amount properly due, subject to lawful payment defences.") in text  # then the Client's
+
+
+@pytest.mark.parametrize(  # the ways special grounds can be unusable (App. C, E7)
+    "reasons, days, expected",  # the answers and the fields R_TERM must report
+    [  # the cases
+        (["client_material_nonpayment"], None, ["cure_period_days"]),  # E7: no cure period
+        (["client_material_nonpayment"], 0, ["cure_period_days"]),  # zero is not positive
+        (["client_material_nonpayment"], -5, ["cure_period_days"]),  # negative
+        ([], 30, ["selected_termination_reasons"]),  # no ground selected
+        (None, 30, ["selected_termination_reasons"]),  # not answered
+        ([], None, ["selected_termination_reasons", "cure_period_days"]),  # both problems
+    ],  # end of the cases
+)  # end of parametrize
+def test_r_term_reports_unusable_grounds(knowledge, reasons, days, expected):
+    """R_TERM blocks generation at each question with a problem; R_REQUIRED stays silent (D16)."""
+    result = with_grounds(knowledge, selected_termination_reasons=reasons, cure_period_days=days)  # the changed answers
+    assert places(result["errors"], "R_TERM") == expected  # reported at the right questions
+    assert "R_REQUIRED" not in rule_ids(result["errors"])  # one problem = one error
+    assert result["can_generate"] is False and result["selected_clauses"] == []  # blocked, no clauses (D17)
+
+
+def test_unsupported_ground_is_stopped_when_the_gap_stays_open(knowledge):
+    """The app only offers supported grounds; any other value leaves the gap open, so step 4 gives R_REQUIRED."""
+    result = with_grounds(knowledge, selected_termination_reasons=["free_cancellation"])  # not possible in the app
+    assert places(result["errors"], "R_REQUIRED") == ["selected_termination_reasons"]  # reported at the grounds
+    assert result["can_generate"] is False  # blocked
+
+
+def test_r_term_is_a_product_error(knowledge):
+    """App. C: R_TERM has the basis "PRODUCT", so it asserts no statutory rule."""
+    error = with_grounds(knowledge, cure_period_days=None)["errors"][0]  # the R_TERM entry
+    assert error["rule_id"] == "R_TERM" and error["category"] == "PRODUCT" and error["citations"] == []  # PRODUCT, no citation
+
+
+def test_termination_question_is_required(knowledge):
+    """An unanswered termination question gives R_REQUIRED at that question (false would be an answered "no")."""
+    assert places(run(knowledge, termination_reasons=None)["errors"], "R_REQUIRED") == ["termination_reasons"]  # App. B
+
+
+def test_stale_grounds_are_ignored(knowledge):
+    """termination_reasons = false: old grounds and an old invalid period cause no error (App. B "Inactive inputs")."""
+    result = run(knowledge, termination_reasons=False, selected_termination_reasons=["client_material_nonpayment"],  # old ground
+                 cure_period_days=0)  # old invalid period
+    assert result["can_generate"] is True  # no R_TERM
+    assert clause_ids(result)[2] == "TERMINATION_LAW"  # still the statutory baseline
+    assert set(result["ignored_fields"]) == {"selected_termination_reasons", "cure_period_days"}  # listed as ignored
+    assert "W_CURE" not in rule_ids(result["warnings"])  # no special grounds, no cure warning
+
+
+def test_w_cure_with_special_grounds(knowledge):
+    """W_CURE warns at the cure period and allows generation (App. C, E7)."""
+    result = with_grounds(knowledge)  # a valid project with one ground
+    warning = [w for w in result["warnings"] if w["rule_id"] == "W_CURE"]  # the W_CURE entries
+    assert [w["field"] for w in warning] == ["cure_period_days"]  # next to the cure period
+    assert warning[0]["citations"] == ["CO_107_TO_108"]  # App. C: "CO 107–108"
+    assert result["can_generate"] is True  # a warning does not block
+
+
+def test_w_cure_is_also_shown_with_errors(knowledge):
+    """Warnings are always computed (D18), so W_CURE also appears next to R_TERM."""
+    result = with_grounds(knowledge, cure_period_days=None)  # special grounds without a period
+    assert "W_CURE" in rule_ids(result["warnings"]) and "R_TERM" in rule_ids(result["errors"])  # both
+
+
+def test_r_cross_no_termination_clause(knowledge):
+    """A data mistake that selects no termination clause is caught by R_CROSS (App. C: exactly one variant)."""
+    changed = copy.deepcopy(knowledge)  # change a copy
+    changed["rules"]["SEL_TERMINATION_LAW"]["when"] = {"field": "termination_reasons", "op": "equals", "value": True}  # data mistake
+    error = evaluate(valid_answers(), changed)["errors"][0]  # no termination clause is selected any more
+    assert error["rule_id"] == "R_CROSS" and error["field"] == "termination_clause"  # the slot is empty
+    assert error["category"] == "PRODUCT"  # counting clauses is a PRODUCT check (D24)
+
+
+def test_court_decision_of_the_termination_clauses(knowledge):
+    """Both clauses reserve the same articles, so both show the same legal basis, ending with BGE 117 II 273."""
+    law = run(knowledge)["selected_clauses"][2]["citations"]  # citations of TERMINATION_LAW
+    cause = with_grounds(knowledge)["selected_clauses"][2]["citations"]  # citations of TERMINATION_FOR_CAUSE
+    assert [c["citation_id"] for c in law] == ["CO_377", "CO_107_TO_109", "CO_366_1", "CO_373_2", "CO_375", "CO_376",  # the articles
+                                               "CO_378", "CO_379", "BGE_117_II_273"]  # and the decision
+    assert cause == law  # the same list, because the clause text reserves the same articles
+    decision = law[-1]  # the decision
+    assert decision["source_id"] == "BGER" and decision["url"] == "https://servat.unibe.ch/dfr/bge/c2117273.html"  # source and its link
+
+
+def test_warnings_of_the_topic_are_in_the_review_record(knowledge):
+    """A review record lists the warnings of its own topic only (D28)."""
+    result = with_grounds(knowledge, price_type="estimate", estimate_basis="Hourly rate")  # both topics warn
+    price, _, termination = result["selected_clauses"]  # the three records
+    assert price["warnings"] == ["W_PRICE"]  # topic 1
+    assert termination["warnings"] == ["W_CURE"]  # topic 5
+
+
+def test_input_values_of_termination_for_cause(knowledge):
+    """The review record stores the answers the clause used (App. C "actual input values")."""
+    record = with_grounds(knowledge)["selected_clauses"][2]  # TERMINATION_FOR_CAUSE
+    assert record["input_values"] == {"selected_termination_reasons": ["client_material_nonpayment"], "cure_period_days": 30}  # the answers
 
 
 def test_review_record_text_is_filled(knowledge):

@@ -10,9 +10,9 @@ art. 363 ff. Contract language: English.
 > incomplete sections and requires completion and legal review before use. It is not
 > legal advice. Use fictional data only.
 
-**Status (iteration 1):** topic 1 "Price and payment" is complete (4 clauses, 11 rules).
-Topics 2–5 (completion date and delay penalty, acceptance and defects, liability,
-termination) appear in the contract as "Not generated in this prototype".
+**Status:** topics 1 "Price and payment" and 5 "Termination" are complete (6 clauses, 15 rules).
+Topics 2–4 (completion date and delay penalty, acceptance and defects, liability) appear in
+the contract as "Not generated in this prototype".
 
 No AI is used inside the app: every decision comes from a written rule in `data/rules.yaml`
 with its legal source.
@@ -85,7 +85,7 @@ tests/
   test_engine.py           at least one test per rule, the conditions, the review records
   test_scenarios.py        runs every scenario file through the engine
   test_generator.py        real Word contracts for P1 and P2; refusal on errors
-  scenarios/               base_project.yaml + P1.yaml ... P15.yaml (expected results)
+  scenarios/               base_project.yaml + P1.yaml ... P21.yaml (expected results)
 .streamlit/config.toml     colours of the app
 requirements.txt           pinned library versions
 ```
@@ -97,11 +97,11 @@ data/*.yaml ──> data_loader.py ──> knowledge
                                        │
 answers (app.py) ──> engine.evaluate(answers, knowledge)
                         step 0  ignore inactive and unknown answers
-                        step 1  input errors      R_SCOPE, R_REQUIRED, R_PRICE, R_PAY   (uses checks.py)
-                        step 2  warnings          W_PRICE, W_CONSUMER                    (uses checks.py)
+                        step 1  input errors      R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, R_TERM   (uses checks.py)
+                        step 2  warnings          W_PRICE, W_CONSUMER, W_CURE                    (uses checks.py)
                                 -> stop here if step 1 found an error
                         step 3  select clauses    SEL_ rules
-                        step 4  fill placeholders                                        (uses placeholders.py)
+                        step 4  fill placeholders                                                (uses placeholders.py)
                         step 5  final checks      R_CROSS (one clause per slot)
                      ──> result: can_generate, errors, warnings, selected_clauses (review records), ...
                                        │
@@ -160,7 +160,8 @@ Decisions never appear in the contract.
 
 ### Add a question
 Add a field to `data/parameters.yaml` (`id`, `section`, `type`, `question`, `required`,
-optional `help_text` and `active_when`). The app shows it automatically.
+optional `help_text` and `active_when`). The app shows it automatically. Use `enum_list` when
+the user may choose several answers; a derived text then needs `join_with` in `clauses.yaml`.
 
 ### Add a test scenario
 Copy a file in `tests/scenarios/`, give it the next ID (e.g. `P16.yaml`), list the answers

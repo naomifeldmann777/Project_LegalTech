@@ -5,7 +5,8 @@ What this file is for:
     This module produces the text for each gap:
     - formatting of answers: CHF amounts, percentages and dates (decision D35)
     - derived texts built from answers with fixed wording from clauses.yaml:
-      vat_treatment_text, milestone_reconciliation_text and milestones_schedule
+      vat_treatment_text, milestone_reconciliation_text, milestones_schedule and
+      termination_reason_text
     - the CHF amount of each milestone with the rounding rule (decision D23)
     - filling a text: replacing every {name} by its value
 
@@ -86,7 +87,7 @@ def format_value(field, value):
         return format_percent(value)  # e.g. "33.33"
     if field_type == "date":  # calendar date
         return format_date(value)  # e.g. "31 December 2027"
-    if field_type == "list":  # a table cannot go into a sentence as it is
+    if field_type in ("list", "enum_list"):  # several values cannot go into a sentence as they are
         raise ValueError(f"field {field['id']} is a list; it needs its own builder")  # programming mistake
     return str(value)  # text, long_text, integer, enum and boolean are printed as they are
 
@@ -137,11 +138,28 @@ def build_derived(placeholder, answers):
     """
     if "text_by_answer" in placeholder:  # the simple kind: one fixed text per answer
         answer = answers.get(placeholder["chosen_by"])  # e.g. the answer of vat_treatment: "included"
+        if isinstance(answer, list):  # several answers, e.g. the selected termination grounds
+            return _join_texts(placeholder, answer)  # their texts, joined
         return placeholder["text_by_answer"].get(answer)  # the matching text, or None if unanswered
     builder = SPECIAL_BUILDERS.get(placeholder["id"])  # placeholders that need their own function (list below)
     if builder is None:  # declared in clauses.yaml, but nothing here can build it
         raise ValueError(f"no builder for derived placeholder '{placeholder['id']}' in placeholders.py")  # tell the team
     return builder(placeholder, answers)  # build it, e.g. the milestone schedule
+
+
+def _join_texts(placeholder, answers_chosen):
+    """Return the texts of several selected answers, joined (handoff App. D: "Join selected approved phrases").
+
+    The texts keep the order of clauses.yaml, so the contract does not depend on the
+    order in which the user clicked the answers. Returns None if nothing is selected
+    or an answer has no approved text; the placeholder then stays unfilled.
+
+    Example: both termination grounds -> "the Contractor’s material failure ...; the Client’s material failure ..."
+    """
+    texts = placeholder["text_by_answer"]  # one approved text per answer
+    if not answers_chosen or not set(answers_chosen) <= set(texts):  # nothing selected, or an answer without a text
+        return None  # leave the placeholder unfilled; the engine reports it
+    return placeholder["join_with"].join(text for value, text in texts.items() if value in answers_chosen)  # file order
 
 
 def _build_milestones_schedule(placeholder, answers):

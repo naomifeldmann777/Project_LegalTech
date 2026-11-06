@@ -119,6 +119,29 @@ rules:
                                               # total not 100, invalid due days, advance unanswered,
                                               # or an amount not positive after cent rounding
 
+  # --- R_TERM (App. C): special termination grounds that are not usable ---------
+  - id: R_TERM                                # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT"
+    topic: TERMINATION                        # topic 5
+    version: "1.0"                            # rule version
+    citations: []                             # App. C names no statutory basis for this PRODUCT rule
+    message: "Select at least one supported termination ground and enter a positive whole number of cure days."  # team draft from App. C, NOT YET APPROVED by the law student
+    cases:
+      - when:                                 # special grounds without a selected ground
+          all:
+            - {field: termination_reasons, op: equals, value: true}
+            - {field: selected_termination_reasons, op: is_empty}
+        field: selected_termination_reasons   # message next to the grounds
+      - when:                                 # special grounds without a positive cure period
+          all:
+            - {field: termination_reasons, op: equals, value: true}
+            - any:
+                - {field: cure_period_days, op: is_empty}
+                - {field: cure_period_days, op: at_most, value: 0}
+        field: cure_period_days               # message next to the cure period
+
   # ===== Step 2: warnings ("Generate" stays possible) ==========================
 
   # --- W_PRICE (App. C): estimate or advance payment ---------------------------
@@ -151,6 +174,19 @@ rules:
     cases:
       - when: {always: true}                  # every project (D19)
         field: null                           # not tied to one question
+
+  # --- W_CURE (App. C): the cure period must be reasonable --------------------
+  - id: W_CURE                                # rule ID from App. C
+    type: warning                             # informs only
+    step: 2                                   # engine step
+    category: LAW                             # team proposal: App. C names only statute, like W_CONSUMER; NOT YET APPROVED
+    topic: TERMINATION                        # topic 5
+    version: "1.0"                            # rule version
+    citations: [CO_107_TO_108]                # App. C: "CO 107–108"
+    message: "The cure period must be reasonable in context. No automatic statutory minimum is assumed, and the number alone does not prove that the period is reasonable."  # team draft from App. C and E7, NOT YET APPROVED by the law student
+    cases:
+      - when: {field: termination_reasons, op: equals, value: true}  # App. C: "Special grounds selected"
+        field: cure_period_days               # message next to the cure period
 
   # ===== Step 3: select clauses ================================================
   # A SEL_ rule adds one clause. Its ID is "SEL_" + the clause ID (App. C).
@@ -198,9 +234,30 @@ rules:
     when: {field: payment_type, op: equals, value: milestones}  # App. C: payment_type = milestones
     reason: "You selected staged payments. PAYMENT_MILESTONE uses the agreed triggers and invoice periods, with final accounting appropriate to the selected price type."  # law packet Task 10
 
+  # --- SEL_TERMINATION_LAW -----------------------------------------------------
+  - id: SEL_TERMINATION_LAW                   # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: TERMINATION                        # topic 5
+    version: "1.0"                            # rule version
+    clause: TERMINATION_LAW                   # clause added
+    when: {field: termination_reasons, op: equals, value: false}  # App. C: termination_reasons = false
+    reason: "You chose not to add contractual termination grounds. TERMINATION_LAW keeps the statutory baseline, including termination by the Client under CO 377 against payment and full indemnity."  # team draft, NOT YET APPROVED
+
+  # --- SEL_TERMINATION_FOR_CAUSE -----------------------------------------------
+  - id: SEL_TERMINATION_FOR_CAUSE             # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: TERMINATION                        # topic 5
+    version: "1.0"                            # rule version
+    clause: TERMINATION_FOR_CAUSE             # clause added
+    when: {field: termination_reasons, op: equals, value: true}  # App. C: termination_reasons = true
+    reason: "You chose to add contractual termination grounds. TERMINATION_FOR_CAUSE keeps the statutory baseline and adds the selected material breaches with a contractual notice and cure procedure."  # team draft, NOT YET APPROVED
+
   # ===== Step 5: final safety checks ===========================================
 
-  # --- R_CROSS (App. C), only the selection cardinality part in iteration 1 ---
+  # --- R_CROSS (App. C), only the selection cardinality part (team decision) ----
+  # The metadata part of App. C is left out: every clause is marked "true", so it could never fire.
   - id: R_CROSS                               # rule ID from App. C
     type: error                               # blocks "Generate"
     step: 5                                   # engine step (diagrams ch. 2)

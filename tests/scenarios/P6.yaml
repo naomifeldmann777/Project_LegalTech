@@ -23,7 +23,7 @@ answers:                                      # what differs from base_project.y
   penalty_cap: "5"                            # old value
 expected:                                     # the result the engine must give
   can_generate: true                          # no error
-  clauses: [PRICE_ESTIMATE, PAYMENT_MILESTONE]  # handoff E8
+  clauses: [PRICE_ESTIMATE, PAYMENT_MILESTONE, TERMINATION_LAW]  # handoff E8
   errors: []                                  # the stale penalty values cause no error
   warnings: [W_PRICE, W_CONSUMER]             # W_PRICE twice (estimate + advance), compared as a set
   ignored_fields: [delay_penalty, penalty_amount, penalty_period, penalty_cap]  # answers the engine ignored (optional key)

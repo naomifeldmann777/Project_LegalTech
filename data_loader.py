@@ -46,10 +46,13 @@ import yaml  # PyYAML: turns YAML files into Python dictionaries and lists
 DEFAULT_DATA_DIR = Path(__file__).parent / "data"
 
 # data types a field may have (see the list at the top of parameters.yaml)
-FIELD_TYPES = {"date", "enum", "boolean", "text", "long_text", "decimal_chf", "decimal_percent", "integer", "list"}
+FIELD_TYPES = {"date", "enum", "enum_list", "boolean", "text", "long_text", "decimal_chf", "decimal_percent", "integer", "list"}
 
-# a column inside a list may have every type except "list" (no tables inside tables)
-COLUMN_TYPES = FIELD_TYPES - {"list"}
+# the two types whose answers come from a fixed list ("allowed_values")
+ENUM_TYPES = {"enum", "enum_list"}
+
+# a column inside a table has one simple value: no tables and no multiple choice inside tables
+COLUMN_TYPES = FIELD_TYPES - {"list", "enum_list"}
 
 # condition operators that compare the answer with a "value" (decision D6)
 OPERATORS_WITH_VALUE = {"equals", "not_equals", "less_than", "at_most", "greater_than", "at_least", "one_of"}
@@ -216,12 +219,12 @@ def _check_citations(citation_ids, knowledge, where, problems):
 
 
 def _allowed_values(knowledge, field_id):
-    """Return the set of allowed answers of an enum field, or None if the field is not an enum.
+    """Return the set of allowed answers of an enum or enum_list field, or None for any other field.
 
     Example: _allowed_values(knowledge, "price_type") -> {"fixed", "estimate"}
     """
     field = knowledge["fields"].get(field_id)  # the field, or None if it does not exist
-    if field is None or field.get("type") != "enum":  # unknown field, or not an enum
+    if field is None or field.get("type") not in ENUM_TYPES:  # unknown field, or no list of answers
         return None  # there is no list of allowed answers
     return {option.get("value") for option in field.get("allowed_values") or []}  # the stored values
 
@@ -383,7 +386,7 @@ def _check_field_definition(definition, allowed_types, where, knowledge, problem
     _require_text(definition, ("question",), where, problems)  # every field needs a question
     if not isinstance(definition.get("required"), bool):  # must be written true or false
         problems.append(f"{where}: 'required' must be true or false")  # report it
-    if field_type == "enum":  # enums need their list of answers
+    if field_type in ENUM_TYPES:  # enums need their list of answers
         options = definition.get("allowed_values") or []  # the answers, or an empty list
         values = [option.get("value") for option in options]  # only the stored values
         if not values:  # no answers at all
@@ -428,6 +431,8 @@ def _check_derived_placeholders(knowledge, problems):
             problems.append(f"{where}: chosen_by '{chosen_by}' must be an enum field")  # report it
         elif set(texts) != allowed:  # a text is missing, or there is a text for an unknown answer
             problems.append(f"{where}: needs exactly one text for each answer of {chosen_by}: {sorted(allowed)}")  # report
+        if knowledge["fields"].get(chosen_by, {}).get("type") == "enum_list":  # several answers: their texts are joined
+            _require_text(placeholder, ("join_with",), where, problems)  # needs the words that join the texts
 
 
 def _check_clause(clause_id, clause, knowledge, problems):

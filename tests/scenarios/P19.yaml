@@ -1,0 +1,21 @@
+# =============================================================================
+# P19.yaml - test scenario P19: both special termination grounds are selected
+# -----------------------------------------------------------------------------
+# Source: handoff App. D ("Join selected approved phrases"). The join with a semicolon is a team proposal.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P19                                       # scenario ID, same as the file name
+title: "Both special termination grounds"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  termination_reasons: true                   # special grounds
+  selected_termination_reasons: [contractor_material_nonperformance, client_material_nonpayment]  # both grounds
+  cure_period_days: 45                        # a positive period
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, TERMINATION_FOR_CAUSE]  # selected clauses
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER, W_CURE]              # cure period warning
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "the Contractor’s material failure to perform the agreed Works; the Client’s material failure to pay an amount properly due, subject to lawful payment defences."
+    - "allow at least 45 calendar days after receipt to cure"

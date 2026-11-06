@@ -1,0 +1,18 @@
+# =============================================================================
+# P21.yaml - test scenario P21: termination_reasons not answered
+# -----------------------------------------------------------------------------
+# Source: handoff App. B (termination_reasons always required). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P21                                       # scenario ID, same as the file name
+title: "Termination question not answered"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  termination_reasons: null                   # not answered; false would be an answered "no"
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_REQUIRED]                        # a required field is missing
+  error_fields:                               # where the error is shown
+    R_REQUIRED: [termination_reasons]         # next to the question
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

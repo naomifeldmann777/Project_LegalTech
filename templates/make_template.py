@@ -16,7 +16,7 @@ How it fits into the project:
 Which documents it implements:
     - Contract skeleton (sections 1-13), copied word for word
     - Law packet Task 12 (title "Construction Contract"), Task 13 (prototype note
-      below the title and in the footer), Task 14 (marker for sections 6-9),
+      below the title and in the footer), Task 14 (marker for the sections not built yet),
       consistency c (comma in the section 7 heading)
     - Law colleague's answers 2 (texts of sections 2, 3 and 13 when there are no
       annexes), 3 (section 11 text while section 7 is empty), 4 (section 6: marker only)
@@ -25,7 +25,7 @@ Which documents it implements:
 Gaps that generator.py must fill:
     contract_date, client_name, client_address, contractor_name, contractor_address,
     site_address, work_description, exclusions_and_client_supplies, annex_register,
-    has_annexes (true / false), price_clause, payment_clause,
+    has_annexes (true / false), price_clause, payment_clause, termination_clause,
     contractor_signatory_name, contractor_signatory_capacity
 """
 
@@ -133,7 +133,7 @@ def build_template():
     add_text(doc, "{{ price_clause }}")  # slot: PRICE_FIXED or PRICE_ESTIMATE (clauses.yaml "slot")
     add_text(doc, "{{ payment_clause }}")  # slot: PAYMENT_ON_COMPLETION or PAYMENT_MILESTONE
 
-    # sections 6-9 belong to topics 2-5, which are not built yet: heading + marker only
+    # sections 6-8 belong to topics 2-4, which are not built yet: heading + marker only
     # (D33, law packet Task 14; for section 6 also the law colleague's answer 4)
     doc.add_heading("6 Completion date and delay penalty", level=2)  # topic 2 (later: deadline/penalty slots)
     add_text(doc, NOT_GENERATED)  # marker
@@ -142,7 +142,7 @@ def build_template():
     doc.add_heading("8 Liability", level=2)  # topic 4
     add_text(doc, NOT_GENERATED)  # marker
     doc.add_heading("9 Termination", level=2)  # topic 5
-    add_text(doc, NOT_GENERATED)  # marker
+    add_text(doc, "{{ termination_clause }}")  # slot: TERMINATION_LAW or TERMINATION_FOR_CAUSE (clauses.yaml "slot")
 
     doc.add_heading("10 Changes to the Works", level=2)  # skeleton section 10 (PRICE_FIXED refers to it)
     add_text(doc, "The Parties shall record agreed changes to the Works and their effects on price and time in "

@@ -15,7 +15,7 @@ answers:                                      # what differs from base_project.y
     - {name: "Handover", trigger: "Works delivered", percent: "40", invoice_due_days: 30, advance: false}
 expected:                                     # the result the engine must give
   can_generate: true                          # no error
-  clauses: [PRICE_FIXED, PAYMENT_MILESTONE]   # selected clauses
+  clauses: [PRICE_FIXED, PAYMENT_MILESTONE, TERMINATION_LAW]   # selected clauses
   errors: []                                  # no errors
   warnings: [W_PRICE, W_CONSUMER]             # W_PRICE because of the advance payment
   contract_text_contains:                     # texts that must appear in the filled clauses (optional key)

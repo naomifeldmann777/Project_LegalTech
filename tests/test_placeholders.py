@@ -66,6 +66,7 @@ def p2_answers(price_type="fixed"):
             {"name": "Handover", "trigger": "Works delivered", "percent": Decimal("40"),
              "invoice_due_days": 30, "advance": False},  # row 3
         ],  # end of the rows
+        "selected_termination_reasons": ["client_material_nonpayment"],  # one termination ground
     }  # end of the answers
 
 
@@ -179,6 +180,47 @@ def test_milestone_reconciliation_text(knowledge):
     placeholder = knowledge["derived_placeholders"]["milestone_reconciliation_text"]  # its definition
     assert build_derived(placeholder, {"price_type": "fixed"}) == "The schedule allocates the fixed price."  # fixed
     assert build_derived(placeholder, {"price_type": "estimate"}).startswith("These are advances against the final price.")  # estimate
+
+
+CONTRACTOR_GROUND = "the Contractor’s material failure to perform the agreed Works"  # App. D, word for word
+CLIENT_GROUND = "the Client’s material failure to pay an amount properly due, subject to lawful payment defences"  # App. D
+
+
+def test_termination_reason_text_for_one_ground(knowledge):
+    """termination_reason_text uses the App. D phrase of the selected ground."""
+    placeholder = knowledge["derived_placeholders"]["termination_reason_text"]  # its definition
+    answers = {"selected_termination_reasons": ["contractor_material_nonperformance"]}  # one ground
+    assert build_derived(placeholder, answers) == CONTRACTOR_GROUND  # the phrase, unchanged
+
+
+@pytest.mark.parametrize(  # the order of the clicks must not matter
+    "chosen",  # the answer
+    [["contractor_material_nonperformance", "client_material_nonpayment"],  # file order
+     ["client_material_nonpayment", "contractor_material_nonperformance"]],  # the other way round
+)  # end of parametrize
+def test_termination_reason_text_joins_both_grounds(knowledge, chosen):
+    """Both grounds are joined by "; " in the order of clauses.yaml (App. D: "Join selected approved phrases")."""
+    placeholder = knowledge["derived_placeholders"]["termination_reason_text"]  # its definition
+    assert build_derived(placeholder, {"selected_termination_reasons": chosen}) == f"{CONTRACTOR_GROUND}; {CLIENT_GROUND}"  # joined
+
+
+@pytest.mark.parametrize("answers", [{}, {"selected_termination_reasons": []}, {"selected_termination_reasons": ["other"]}])  # no usable answer
+def test_termination_reason_text_stays_open_without_a_usable_ground(knowledge, answers):
+    """Without a selected ground, or with one that has no approved text, the gap stays open."""
+    assert build_derived(knowledge["derived_placeholders"]["termination_reason_text"], answers) is None  # no text
+
+
+def test_several_answers_cannot_be_printed_as_a_single_value(knowledge):
+    """An enum_list answer needs a derived text; printing the list itself is a programming mistake."""
+    with pytest.raises(ValueError, match="selected_termination_reasons"):  # the message names the field
+        format_value(knowledge["fields"]["selected_termination_reasons"], ["client_material_nonpayment"])  # not printable
+
+
+def test_build_values_for_termination_for_cause(knowledge):
+    """TERMINATION_FOR_CAUSE gets its two gaps; the whole number is printed as it is."""
+    clause = knowledge["clauses"]["TERMINATION_FOR_CAUSE"]  # the clause
+    answers = {"selected_termination_reasons": ["client_material_nonpayment"], "cure_period_days": 30}  # its answers
+    assert build_values(clause, answers, knowledge) == {"termination_reason_text": CLIENT_GROUND, "cure_period_days": "30"}  # both gaps
 
 
 def test_every_derived_placeholder_in_the_yaml_can_be_built(knowledge):

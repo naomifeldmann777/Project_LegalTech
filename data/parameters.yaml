@@ -20,8 +20,12 @@
 #   - Contract skeleton (Construction_Contract_Skeleton_EN): fields used by the template
 #   - Diagrams PDF chapter 8: ER entity PARAMETER
 # Decisions used (IDs from the team's decision list): D2, D13, D14, D15, D16, D22, D30.
-# Left out on purpose in iteration 1 (D2): client_owns_site,
-#   contract_conclusion_channel, personal_contract_required and all fields of topics 2-5.
+# Topic 5 "Termination": fields and question texts from App. B and note sheet 5. The
+#   answer labels and help texts of topic 5 are team drafts, NOT YET APPROVED by the law student.
+# Left out for now: all fields of topics 2-4.
+# Left out on purpose (team decision, to keep the prototype simple): client_owns_site,
+#   contract_conclusion_channel and personal_contract_required. App. B lists them as "Always",
+#   but they never change the contract text; rule W_CONTEXT is left out with them.
 # Missing vs. no: an unanswered field is None (null); false is an answered "no" (App. B).
 # =============================================================================
 
@@ -35,6 +39,8 @@ sections:
     title: "Parties and Works"                # proposed heading
   - id: price_payment                         # topic 1
     title: "Price and payment"                # topic name from handoff note sheet 1
+  - id: termination                           # topic 5
+    title: "Termination"                      # topic name from handoff note sheet 5
   - id: signature                             # who signs for the Contractor
     title: "Signature"                        # proposed heading
 
@@ -43,6 +49,7 @@ sections:
 # Possible data types ("type"):
 #   date            a calendar date
 #   enum            one answer from a fixed list ("allowed_values")
+#   enum_list       any number of answers from a fixed list ("allowed_values")
 #   boolean         yes / no
 #   text            one line of text
 #   long_text       several lines of text
@@ -274,6 +281,40 @@ fields:
         question: "Advance payment?"          # proposed column label
         help_text: "Does this instalment become payable before its corresponding work is performed? This differs from an estimated-price interim payment on account of the final price."  # law packet Task 3
         required: true                        # law packet Task 9: advance must be answered
+
+  # ===== Section "Termination" (topic 5) ======================================
+
+  # --- termination_reasons (App. B) -------------------------------------------
+  - id: termination_reasons                   # field ID
+    section: termination                      # questionnaire section
+    type: boolean                             # yes / no; starts unanswered (None), false is a valid answer
+    question: "Add contractual grounds for termination?"  # App. B
+    help_text: "Answer No to keep the statutory termination baseline only. Answer Yes to add contractual grounds after notice and a cure period; the statutory routes stay available."  # team draft from App. B and note sheet 5
+    required: true                            # App. B: always; no means statutory baseline
+
+  # --- selected_termination_reasons (App. B) ----------------------------------
+  - id: selected_termination_reasons          # field ID
+    section: termination                      # questionnaire section
+    type: enum_list                           # App. B: "list of enums"
+    question: "Which material breaches should allow termination after cure?"  # App. B
+    allowed_values:                           # App. B: contractor_material_nonperformance and/or client_material_nonpayment
+      - value: contractor_material_nonperformance  # stored value
+        label: "The Contractor’s material failure to perform the agreed Works"  # from the App. D termination_reason_text wording
+      - value: client_material_nonpayment     # stored value
+        label: "The Client’s material failure to pay an amount properly due, subject to lawful payment defences"  # App. D wording
+    active_when: {field: termination_reasons, op: equals, value: true}  # App. B: "If yes"
+    required: true                            # required while active
+    checked_by: R_TERM                        # a missing ground is reported by R_TERM, not R_REQUIRED (D16)
+
+  # --- cure_period_days (App. B) ----------------------------------------------
+  - id: cure_period_days                      # field ID; also {cure_period_days} in TERMINATION_FOR_CAUSE
+    section: termination                      # questionnaire section
+    type: integer                             # App. B: integer, > 0
+    question: "How many calendar days should the notice initially allow to cure?"  # App. B
+    help_text: "Enter a positive whole number. A longer period may be needed to be reasonable; no automatic statutory minimum is assumed."  # team draft from App. B and App. C (W_CURE)
+    active_when: {field: termination_reasons, op: equals, value: true}  # App. B: "Special grounds selected"
+    required: true                            # required while active
+    checked_by: R_TERM                        # a missing or non-positive period is reported by R_TERM (D16)
 
   # ===== Section "Signature" ==================================================
 

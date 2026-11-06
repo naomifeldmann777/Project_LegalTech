@@ -14,7 +14,7 @@ answers:                                      # what differs from base_project.y
     - {name: "Stage 3", trigger: "Works delivered", percent: "30", invoice_due_days: 30, advance: false}
 expected:                                     # the result the engine must give
   can_generate: true                          # no error: the old milestones do not count
-  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION]  # payment on delivery
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, TERMINATION_LAW]  # payment on delivery
   errors: []                                  # no R_PAY
   warnings: [W_CONSUMER]                      # consumer warning
   ignored_fields: [milestones]                # the old milestones were ignored
