@@ -3,8 +3,10 @@
 What this file is for:
     It guides the user step by step through the questionnaire (one step per section of
     parameters.yaml), checks the answers with the engine, shows errors (red) and warnings
-    (yellow), shows the review screen (each clause with its reason and legal basis) and
-    offers the Word contract for download. The flow follows the process flowchart (diagrams PDF ch. 1):
+    (yellow), shows the review screen and offers the Word contract for download. The review
+    screen shows the annotated contract (the generated contract like a sheet of paper, each
+    chosen clause highlighted with a "Why ...?" explanation) and the clauses grouped by topic.
+    The flow follows the process flowchart (diagrams PDF ch. 1):
         step 1 ... step 8 (questions) -> last step "Check and review"
             -> errors: listed per step; "Go to this step" leads back to the questions
             -> no errors: review screen -> download
@@ -40,7 +42,12 @@ Which documents it implements:
 
 from datetime import date, datetime  # date answers; datetime to recognise date-times from the table
 from decimal import Decimal  # money and percentages become exact Decimal values (D25)
+import html  # html.escape: contract text is written safely into the preview's HTML
+from io import BytesIO  # read the generated Word file from memory
 
+from docx import Document  # python-docx: reads the generated Word file back for the contract preview
+from docx.enum.text import WD_ALIGN_PARAGRAPH  # to recognise centred paragraphs
+from docx.table import Table  # a table in the Word file (parties, signatures)
 import streamlit as st  # the web user interface
 
 from checks import is_empty  # the definition of "not answered" (None, "", [])
@@ -102,6 +109,47 @@ a.summary-card:hover {                                 /* mouse over a card that
 .summary-label { font-size: 0.875rem; color: #5C5648; }                  /* e.g. "Warnings" */
 .summary-value { font-size: 2.25rem; font-weight: 600; line-height: 1.2; }  /* the number */
 .summary-hint { font-size: 0.8rem; color: #1F4E79; }                    /* "Show ↓" */
+.st-key-contract_paper {                               /* the contract preview: a white sheet of paper */
+  background: #FFFFFF;                                 /* white like paper */
+  border: 1px solid #D6CCB8;                           /* thin beige border */
+  border-radius: 0.3rem;                               /* slightly rounded corners */
+  padding: 2.5rem 2.75rem;                             /* page margins */
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);          /* soft shadow, as if the sheet lay on the page */
+}
+div.paper, div.paper p, div.paper table td {           /* all contract text */
+  font-family: Georgia, "Times New Roman", serif;      /* the font of the Word contract */
+  font-size: 0.95rem;                                  /* a little smaller than the app text */
+  line-height: 1.55;                                   /* easy to read */
+  color: #1A1A1A;                                      /* almost black */
+}
+div.paper p { margin: 0 0 0.6rem 0; text-align: justify; }  /* paragraphs: justified like the contract */
+div.paper p.center { text-align: center; }                  /* centred lines below the title */
+div.paper .paper-title {                               /* "Construction Contract" */
+  font-size: 1.7rem; letter-spacing: 0.12em; text-transform: uppercase;  /* large, spaced capitals */
+  color: #1F4E79; text-align: center; margin: 0.5rem 0 0.8rem;          /* dark blue, centred */
+}
+div.paper .paper-part {                                /* part headings, e.g. "Contract terms" */
+  text-align: center; text-transform: uppercase; letter-spacing: 0.1em;  /* centred capitals */
+  color: #1F4E79; font-weight: 600;                                      /* dark blue, semi-bold */
+  border-top: 1px solid #B7C7D9; border-bottom: 1px solid #B7C7D9;      /* fine rules above and below */
+  padding: 0.3rem 0; margin: 1.6rem 0 1rem;                              /* space around it */
+}
+div.paper .paper-heading {                             /* section headings, e.g. "5 Price and payment" */
+  font-weight: 700; color: #1F4E79;                    /* bold, dark blue */
+  border-bottom: 1px solid #B7C7D9;                    /* fine rule below */
+  padding-bottom: 0.15rem; margin: 1.2rem 0 0.6rem;    /* space around it */
+}
+div.paper table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0.4rem 0 0.8rem; }  /* full width */
+div.paper table td { vertical-align: top; padding: 0.5rem 0.7rem; border: none; }  /* no grid lines */
+div.paper table.paper-parties td.filled { background: #EEF3F8; border: 1px solid #B7C7D9; }  /* boxes for the parties */
+div.paper table td.sign-line { border-bottom: 1px solid #8A8170; padding-top: 1.6rem; }  /* line to sign on */
+[class*="st-key-contract_clause_"] {                   /* a clause chosen by the rules */
+  background: #EEF3F8;                                 /* light blue */
+  border-left: 4px solid #1F4E79;                      /* dark blue bar on the left */
+  border-radius: 0 0.3rem 0.3rem 0;                    /* rounded on the right */
+  padding: 0.6rem 0.9rem 0.3rem;                       /* space inside */
+  margin: 0.2rem 0 0.8rem;                             /* space to the fixed text */
+}
 </style>
 """
 
@@ -559,10 +607,11 @@ def citation_line(citation_id, knowledge):
 
 def show_check_step(result, answers, knowledge, steps):
     """Show the last step: the problems per step, or the summary, download and review screen."""
+    word_bytes = None  # the Word contract; only built when there are no errors
     if result["can_generate"]:  # no errors
         st.success("No problems found. Your contract is ready.", icon=":material/task_alt:")  # green banner
         show_summary(result)  # two numbers: clauses and warnings
-        offer_download(result, answers, knowledge)  # download button
+        word_bytes = offer_download(result, answers, knowledge)  # download button; the same file feeds the preview
     else:  # at least one error
         st.error(f"Please correct {len(result['errors'])} problem(s) before the contract can be created.",
                  icon=":material/error:")  # red banner with the number of errors
@@ -571,7 +620,7 @@ def show_check_step(result, answers, knowledge, steps):
                   width="stretch")  # "Generate" disabled while errors exist
     show_warnings(result, knowledge)  # warnings are shown in both cases (D18)
     if result["can_generate"]:  # the review screen only exists without errors
-        show_review(result, knowledge)  # every clause with its reason and legal basis
+        show_review(result, knowledge, word_bytes)  # annotated contract and every clause with its reason and legal basis
 
 
 def show_errors_by_step(result, knowledge, steps):
@@ -594,11 +643,10 @@ def show_errors_by_step(result, knowledge, steps):
 def show_summary(result):
     """Show two numbers in small cards: the clauses that go into the contract and the warnings to review.
 
-    Clicking a card scrolls to its list further down ("Selected clauses" or "Warnings"),
-    through the anchor of that heading (see show_review and show_warnings). The look is
-    set in PAGE_STYLE.
+    Clicking a card scrolls further down ("Your contract" or "Warnings"), through the
+    anchor of that heading (see show_review and show_warnings). The look is set in PAGE_STYLE.
     """
-    cards = [summary_card("Clauses selected", len(result["selected_clauses"]), "selected-clauses"),  # e.g. 8
+    cards = [summary_card("Clauses selected", len(result["selected_clauses"]), "contract"),  # e.g. 8
              summary_card("Warnings", len(result["warnings"]), "warnings")]  # e.g. 1
     st.markdown(f'<div class="summary-row">{"".join(cards)}</div>', unsafe_allow_html=True)  # both cards in one row
 
@@ -624,21 +672,28 @@ def show_warnings(result, knowledge):
         st.warning(f"**{warning['rule_id']}:** " + message_with_basis(warning, knowledge))  # rule ID, message, legal basis
 
 
-def show_review(result, knowledge):
-    """Show the review screen: one tab per topic, every selected clause with its reason, legal basis and text.
+def show_review(result, knowledge, word_bytes):
+    """Show the review screen in two tabs: the annotated contract, and the clauses grouped by topic.
 
     Legal sources are shown here (and next to the messages), never in the contract (handoff App. C).
     """
-    st.subheader("Selected clauses", anchor="selected-clauses")  # heading; target of the "Clauses selected" card
+    st.subheader("Your contract", anchor="contract")  # heading; target of the "Clauses selected" card
     st.caption(f"Why each clause was chosen and on which legal basis. Legal basis version: {result['law_version']}")
-    records = result["selected_clauses"]  # already sorted by topic (engine.py)
-    topic_ids = list(dict.fromkeys(record["topic_id"] for record in records))  # the topics, in contract order
-    tabs = st.tabs([knowledge["topics"][topic_id]["name"] for topic_id in topic_ids])  # one tab per topic
-    for tab, topic_id in zip(tabs, topic_ids):  # each tab with its topic
-        with tab:  # draw into this tab
-            for record in records:  # each selected clause
-                if record["topic_id"] == topic_id:  # it belongs to this topic
-                    show_clause(record, knowledge)  # the clause card
+    annotated, by_topic = st.tabs(["Annotated contract", "Clauses by topic"])  # two views of the same result
+    with annotated:  # the contract as it will be downloaded, with explanations
+        if word_bytes is None:  # the generator refused (its message is shown above)
+            st.info("The contract preview is not available because the contract could not be created.")  # explain
+        else:  # the contract exists
+            show_annotated_contract(word_bytes, result, knowledge)  # the sheet of paper
+    with by_topic:  # one tab per topic with the clause cards
+        records = result["selected_clauses"]  # already sorted by topic (engine.py)
+        topic_ids = list(dict.fromkeys(record["topic_id"] for record in records))  # the topics, in contract order
+        tabs = st.tabs([knowledge["topics"][topic_id]["name"] for topic_id in topic_ids])  # one tab per topic
+        for tab, topic_id in zip(tabs, topic_ids):  # each tab with its topic
+            with tab:  # draw into this tab
+                for record in records:  # each selected clause
+                    if record["topic_id"] == topic_id:  # it belongs to this topic
+                        show_clause(record, knowledge)  # the clause card
     if result["ignored_fields"]:  # answers the engine ignored (e.g. old milestones)
         st.caption("Ignored answers (not used for these choices): " + ", ".join(result["ignored_fields"]))  # list them
 
@@ -659,16 +714,158 @@ def show_clause(record, knowledge):
         st.markdown(f"**Reason:** {record['reason']}")  # plain-language reason (law packet Task 10)
 
 
+# ---------------------------------------------------------------------------
+# Annotated contract (review screen)
+# ---------------------------------------------------------------------------
+
+def show_annotated_contract(word_bytes, result, knowledge):
+    """Show the generated contract like a sheet of paper; each clause chosen by the rules is highlighted
+    and has a "Why ...?" button with the answers, the reason and the legal basis.
+
+    The contract is read back from the same Word file the user downloads, so the preview always
+    matches the download. A paragraph is a chosen clause when its text is exactly the filled text
+    of a selected clause (engine review record); everything else is the fixed text of the template.
+    """
+    st.caption("Highlighted paragraphs were chosen by the rules from your answers; the rest is the fixed "
+               "contract text. Click “Why …?” below a highlighted paragraph to see why it is there.")  # how to read it
+    clauses = {record["text"].strip(): record for record in result["selected_clauses"]}  # clause text -> record
+    document = Document(BytesIO(word_bytes))  # the Word file, read back
+    waiting = []  # HTML of fixed text not drawn yet (drawn together, so the page needs few elements)
+    tables_seen = 0  # the first table (section 1) holds the parties boxes, the last one the signatures
+    with st.container(key="contract_paper", gap=None):  # the sheet of paper (look: PAGE_STYLE)
+        for item in document.iter_inner_content():  # paragraphs and tables, in document order
+            if isinstance(item, Table):  # the parties boxes or the signature block
+                waiting.append(table_html(item, parties=tables_seen == 0))  # boxes only for the first table
+                tables_seen += 1  # one more table seen
+                continue  # next item
+            record = clauses.get(item.text.strip())  # the clause this paragraph is, or None
+            if record is None:  # fixed text of the template
+                waiting.append(paragraph_html(item))  # keep it for later
+                continue  # next item
+            draw_paper(waiting)  # first the fixed text before the clause
+            waiting = []  # all drawn
+            show_contract_clause(item, record, knowledge)  # the highlighted clause with its "Why ...?" button
+        draw_paper(waiting)  # the fixed text after the last clause
+
+
+def draw_paper(parts):
+    """Draw collected HTML parts of the contract (nothing if there are none)."""
+    if parts:  # something to draw
+        st.markdown(f'<div class="paper">{"".join(parts)}</div>', unsafe_allow_html=True)  # one block of contract text
+
+
+def runs_html(paragraph):
+    """Return the text of a Word paragraph as HTML, keeping bold, italics and line breaks.
+
+    Example: a run "Client:" in bold -> "<strong>Client:</strong>"
+    """
+    pieces = []  # the HTML of each run
+    for run in paragraph.runs:  # each piece of text with one format
+        text = html.escape(run.text).replace("\n", "<br>")  # safe text; a line break in Word becomes <br>
+        if run.bold:  # bold in Word
+            text = f"<strong>{text}</strong>"  # bold here
+        if run.italic:  # italics in Word
+            text = f"<em>{text}</em>"  # italics here
+        pieces.append(text)  # keep it
+    return "".join(pieces)  # e.g. "<strong>Contract date:</strong> 1 November 2026"
+
+
+def paragraph_html(paragraph):
+    """Return one paragraph of fixed contract text as HTML, styled by its Word style ("" if it is empty)."""
+    text = runs_html(paragraph)  # the text with its formats
+    if not text.strip():  # an empty paragraph (spacing in Word)
+        return ""  # leave it out
+    style = paragraph.style.name  # the Word style, e.g. "Heading 2"
+    if style == "Title":  # "Construction Contract"
+        return f'<div class="paper-title">{text}</div>'  # large, centred
+    if style == "Heading 1":  # part heading, e.g. "Contract terms"
+        return f'<div class="paper-part">{text}</div>'  # centred capitals between two rules
+    if style == "Heading 2":  # section heading, e.g. "5 Price and payment"
+        return f'<div class="paper-heading">{text}</div>'  # bold, dark blue
+    centred = paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER  # e.g. the lines below the title
+    return f'<p class="{"center" if centred else ""}">{text}</p>'  # a normal paragraph
+
+
+def table_html(table, parties):
+    """Return a Word table (parties boxes or signature block) as an HTML table.
+
+    parties=True draws the filled cells as boxes; a cell ending with ":" (e.g. "Signature:")
+    gets a line to sign on, like in the Word file.
+    """
+    rows = []  # the HTML of each row
+    for row in table.rows:  # each row
+        cells = []  # the HTML of each cell
+        for cell in row.cells:  # each cell (the middle one is an empty spacer)
+            inner = "<br>".join(runs_html(p) for p in cell.paragraphs if p.text.strip())  # its lines
+            classes = []  # how the cell looks
+            if parties and inner:  # a party box with text
+                classes.append("filled")  # light blue box
+            if cell.text.strip().endswith(":"):  # e.g. "Signature:" or "Place and date:"
+                classes.append("sign-line")  # a line to sign on
+            cells.append(f'<td class="{" ".join(classes)}">{inner}</td>')  # the cell
+        rows.append(f"<tr>{''.join(cells)}</tr>")  # the row
+    kind = "paper-parties" if parties else "paper-signatures"  # which kind of table
+    return f'<table class="{kind}">{"".join(rows)}</table>'  # the table
+
+
+def show_contract_clause(paragraph, record, knowledge):
+    """Show one chosen clause highlighted, with a "Why ...?" button that opens the explanation."""
+    with st.container(key=f"contract_clause_{record['position']}", gap=None):  # light blue box (PAGE_STYLE)
+        st.markdown(f'<div class="paper"><p>{runs_html(paragraph)}</p></div>', unsafe_allow_html=True)  # the clause
+        with st.popover(f"Why “{record['title']}”?", icon=":material/help:", type="tertiary"):  # closes on a click outside
+            show_why(record, knowledge)  # the explanation
+
+
+def show_why(record, knowledge):
+    """Show why a clause is in the contract: reason, the answers it is based on, and its legal basis."""
+    st.markdown(f"**{record['title']}**")  # e.g. "Fixed price"
+    st.markdown(f"**Reason:** {record['reason']}")  # plain-language reason (law packet Task 10)
+    used = {**record["decided_by"], **record["input_values"]}  # answers that chose it, then answers it uses
+    if used:  # the clause depends on answers
+        lines = [f"- {knowledge['fields'][field_id]['question']} **{answer_text(knowledge['fields'][field_id], value)}**"
+                 for field_id, value in used.items()]  # one bullet per answer: question and answer
+        st.markdown("**Based on your answers:**\n" + "\n".join(lines))  # the list
+    st.markdown(legal_basis([c["citation_id"] for c in record["citations"]], knowledge))  # the citations
+    if record["basis_note"]:  # the App. D "Basis" line
+        st.caption(record["basis_note"])  # e.g. "... written change process is a product choice."
+
+
+def answer_text(field, value):
+    """Return an answer as short readable text for the "Why ...?" explanation.
+
+    Examples: "fixed" -> "Fixed price"; True -> "Yes"; Decimal("100000") -> "CHF 100,000.00"; 3 rows -> "3 rows"
+    """
+    if is_empty(value):  # not answered (e.g. no maximum for a delay penalty)
+        return "not answered"  # say so
+    field_type = field["type"]  # the data type from parameters.yaml
+    if field_type == "boolean":  # yes / no
+        return YES_NO[value]  # "Yes" / "No"
+    if field_type in ("enum", "enum_list"):  # chosen from a list
+        labels = {option["value"]: option["label"] for option in field["allowed_values"]}  # stored value -> text
+        chosen = value if field_type == "enum_list" else [value]  # always a list here
+        return ", ".join(labels.get(item, str(item)) for item in chosen)  # e.g. "Fixed price"
+    if field_type == "date":  # a date
+        return value.strftime("%d.%m.%Y")  # e.g. "30.06.2027"
+    if field_type == "decimal_chf":  # money
+        return f"CHF {value:,.2f}"  # e.g. "CHF 100,000.00"
+    if field_type == "decimal_percent":  # a percentage
+        return f"{value:,.2f} %"  # e.g. "5.00 %"
+    if field_type == "list":  # a table such as the milestones
+        return f"{len(value)} row{'s' if len(value) != 1 else ''}"  # e.g. "3 rows"
+    return " ".join(str(value).split())  # text or number on one line (line breaks would break the list)
+
+
 def offer_download(result, answers, knowledge):
-    """Build the Word contract and show the download button (or the generator's message if it refuses)."""
+    """Build the Word contract, show the download button and return the file (None if the generator refuses)."""
     try:  # the generator refuses with GenerationError if something is wrong
         word_bytes = generate_contract(result, answers, knowledge)  # the Word file as bytes
     except GenerationError as error:  # it refused
         st.error(str(error))  # show why
-        return  # no download
+        return None  # no download, no preview
     st.download_button("Download contract (Word)", data=word_bytes, file_name="construction_contract.docx",
                        mime=WORD_FILE_TYPE, type="primary", icon=":material/download:",
                        width="stretch")  # a wide button; clicking it downloads the file
+    return word_bytes  # the same file for the contract preview
 
 
 main()  # Streamlit runs this file from top to bottom on every click

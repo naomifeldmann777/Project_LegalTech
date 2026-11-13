@@ -304,6 +304,7 @@ def _review_record(position, clause, rule, text, active, knowledge, warnings):
         "slot": clause["slot"],  # place in the Word template, e.g. "price_clause"
         "selection_rule_id": rule["id"],  # why it was selected, e.g. "SEL_PRICE_FIXED"
         "reason": rule["reason"],  # the plain-language reason (law packet Task 10)
+        "decided_by": _decisive_answers(rule, active),  # the answers the selection rule looked at
         "input_values": _input_values(clause, active, knowledge),  # the answers the clause used
         "text": text,  # the clause text with all gaps filled
         "citations": [_citation_details(citation_id, knowledge) for citation_id in clause["citations"]],  # legal basis
@@ -311,6 +312,31 @@ def _review_record(position, clause, rule, text, active, knowledge, warnings):
         "law_version": knowledge["law_version"],  # handoff App. C: stored in every record
         "warnings": _topic_warnings(warnings, clause["topic"]),  # IDs of the warnings of the same topic (D28)
     }  # end of the record
+
+
+def _decisive_answers(rule, active):
+    """Return the answers a selection rule's condition looks at ({} for {always: true}).
+
+    Shown on the review screen as "Based on your answers" (app.py, annotated contract).
+    Example for SEL_PRICE_FIXED: {"price_type": "fixed"}
+    """
+    names = _condition_fields(rule["when"])  # the field IDs in the condition, maybe with duplicates
+    return {name: active.get(name) for name in dict.fromkeys(names)}  # dict.fromkeys removes duplicates, keeps order
+
+
+def _condition_fields(condition):
+    """Return the field IDs a condition looks at, in the order they are written.
+
+    Example: {all: [{field: delay_penalty, ...}, {field: penalty_cap, ...}]} -> ["delay_penalty", "penalty_cap"]
+    """
+    if "always" in condition:  # {always: true} looks at no answer
+        return []  # nothing
+    if "all" in condition or "any" in condition:  # AND / OR: the fields of every part
+        parts = condition.get("all") or condition.get("any")  # the list of parts
+        return [name for part in parts for name in _condition_fields(part)]  # all their fields, in order
+    if "not" in condition:  # NOT: the fields of the inner condition
+        return _condition_fields(condition["not"])  # the inner fields
+    return [condition["field"]]  # a simple condition: its one field
 
 
 def _input_values(clause, active, knowledge):

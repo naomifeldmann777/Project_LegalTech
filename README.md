@@ -42,7 +42,10 @@ step with its status (green tick, red mark with the number of errors, grey circl
 finished) and lets you jump to any of them. Errors appear below the question: a wrong
 answer at once, a missing answer once you have left its step. The last step, **Check and
 review**, lists all errors per step with a **Go to this step** button; without errors it
-shows the review screen and **Download contract (Word)**. Stop the app with `Ctrl+C`.
+shows **Download contract (Word)** and the **annotated contract**: the generated contract
+like a sheet of paper, with every clause chosen by the rules highlighted and a **Why …?**
+button that shows the answers it is based on, the reason and the legal basis.
+Stop the app with `Ctrl+C`.
 
 After changing a YAML file in `data/`, restart the app (the files are loaded once).
 

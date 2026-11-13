@@ -481,6 +481,14 @@ def test_review_record_contains_what_the_handoff_asks_for(knowledge):
     assert record["slot"] == "payment_clause" and record["position"] == 2  # where it goes
 
 
+def test_review_record_names_the_answers_that_decided(knowledge):
+    """decided_by: the answers the SEL_ rule looked at; {} for a clause that is always selected."""
+    result = run(knowledge)  # the valid project (fixed price, no penalty)
+    records = {record["clause_id"]: record for record in result["selected_clauses"]}  # clause ID -> record
+    assert records["PRICE_FIXED"]["decided_by"] == {"price_type": "fixed"}  # SEL_PRICE_FIXED: price_type equals fixed
+    assert records["ACCEPTANCE_PROTOCOL"]["decided_by"] == {}  # {always: true} looks at no answer
+
+
 def test_court_decisions_of_the_fixed_price_clause(knowledge):
     """PRICE_FIXED cites the decisions on Art. 373 para. 2 CO, each with its own link (research document, section 6)."""
     record = run(knowledge)["selected_clauses"][0]  # the price clause of the valid project
