@@ -76,7 +76,16 @@ It prints `All data files are OK: ...` or a list of mistakes with file, rule and
 ## 4. Project structure
 
 ```
-app.py                     Streamlit user interface: step-by-step questionnaire, messages, review screen, download
+app.py                     entry point of the Streamlit app: draws one page from the parts in ui/
+ui/                        the parts of the user interface (no rule logic):
+  navigation.py            steps, progress bar, Back / Next, sidebar, when errors are shown
+  questions.py             the questions of a step, the tables (milestones, annexes), messages
+  review.py                last step: problems per step, summary, download, review screen
+  contract_preview.py      the annotated contract ("Why ...?" for every chosen clause)
+  legal_sources.py         the "Legal sources" tab and the Fedlex check
+  citations.py             the legal basis lines (articles with links, court decisions)
+  common.py                constants and small helpers used by several modules
+  style.css                small changes to Streamlit's look
 engine.py                  rule engine: answers in -> errors, warnings, selected and filled clauses out
 checks.py                  the 5 special checks that rules.yaml refers to by name
 placeholders.py            fills the {placeholders} of a clause; CHF / date formats; milestone rounding

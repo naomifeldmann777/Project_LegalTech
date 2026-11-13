@@ -1,0 +1,84 @@
+/* ui/style.css - small changes to Streamlit's look; app.py loads this file with st.html.
+   The colours of the theme itself are in .streamlit/config.toml.
+   The step buttons in the sidebar have keys like "step_ok_2"; Streamlit gives each one the class
+   "st-key-step_ok_2", so the status in the key (open / ok / error) decides the colour of the icon. */
+
+[class*="st-key-step_"] button > div,                  /* the box inside a step button */
+[class*="st-key-step_"] button > div > span {          /* the box around icon and title */
+  justify-content: flex-start;                         /* icon and title start on the left, like a menu */
+}
+[class*="st-key-step_"] button p {                     /* the title */
+  text-align: left;                                    /* a long title also wraps on the left */
+}
+[class*="st-key-step_ok_"] [data-testid="stIconMaterial"] { color: #2E7D32; }     /* green tick */
+[class*="st-key-step_error_"] [data-testid="stIconMaterial"] { color: #B42318; }  /* red mark */
+[class*="st-key-step_open_"] [data-testid="stIconMaterial"] { color: #8A8170; }   /* grey circle */
+/* the current step is a dark blue button: lighter colours, so the icon stays visible */
+[class*="st-key-step_ok_"] [data-testid="stBaseButton-primary"] [data-testid="stIconMaterial"] { color: #A5E3B4; }
+[class*="st-key-step_error_"] [data-testid="stBaseButton-primary"] [data-testid="stIconMaterial"] { color: #FFB3A8; }
+[class*="st-key-step_open_"] [data-testid="stBaseButton-primary"] [data-testid="stIconMaterial"] { color: #FFFFFF; }
+.summary-row {                                         /* the two number cards on the review step */
+  display: flex;                                       /* side by side */
+  gap: 1rem;                                           /* space between the cards */
+  margin-bottom: 0.5rem;                               /* space below the cards */
+}
+.summary-card {                                        /* one number card */
+  flex: 1;                                             /* both cards equally wide */
+  display: flex;                                       /* label, number and hint ... */
+  flex-direction: column;                              /* ... below each other */
+  padding: 0.75rem 1rem;                               /* space inside the card */
+  background: #FFFFFF;                                 /* white card on the beige page */
+  border: 1px solid #D6CCB8;                           /* thin beige border */
+  border-radius: 0.6rem;                               /* rounded corners */
+  color: #1A1A1A !important;                           /* dark text instead of a blue link */
+  text-decoration: none !important;                    /* no underline */
+  transition: background 0.15s, border-color 0.15s;    /* smooth colour change on hover */
+}
+a.summary-card:hover {                                 /* mouse over a card that is a link */
+  background: #EEF3F8;                                 /* light blue */
+  border-color: #1F4E79;                               /* dark blue border (primary colour) */
+}
+.summary-label { font-size: 0.875rem; color: #5C5648; }                  /* e.g. "Warnings" */
+.summary-value { font-size: 2.25rem; font-weight: 600; line-height: 1.2; }  /* the number */
+.summary-hint { font-size: 0.8rem; color: #1F4E79; }                    /* "Show ↓" */
+.st-key-contract_paper {                               /* the contract preview: a white sheet of paper */
+  background: #FFFFFF;                                 /* white like paper */
+  border: 1px solid #D6CCB8;                           /* thin beige border */
+  border-radius: 0.3rem;                               /* slightly rounded corners */
+  padding: 2.5rem 2.75rem;                             /* page margins */
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);          /* soft shadow, as if the sheet lay on the page */
+}
+div.paper, div.paper p, div.paper table td {           /* all contract text */
+  font-family: Georgia, "Times New Roman", serif;      /* the font of the Word contract */
+  font-size: 0.95rem;                                  /* a little smaller than the app text */
+  line-height: 1.55;                                   /* easy to read */
+  color: #1A1A1A;                                      /* almost black */
+}
+div.paper p { margin: 0 0 0.6rem 0; text-align: justify; }  /* paragraphs: justified like the contract */
+div.paper p.center { text-align: center; }                  /* centred lines below the title */
+div.paper .paper-title {                               /* "Construction Contract" */
+  font-size: 1.7rem; letter-spacing: 0.12em; text-transform: uppercase;  /* large, spaced capitals */
+  color: #1F4E79; text-align: center; margin: 0.5rem 0 0.8rem;          /* dark blue, centred */
+}
+div.paper .paper-part {                                /* part headings, e.g. "Contract terms" */
+  text-align: center; text-transform: uppercase; letter-spacing: 0.1em;  /* centred capitals */
+  color: #1F4E79; font-weight: 600;                                      /* dark blue, semi-bold */
+  border-top: 1px solid #B7C7D9; border-bottom: 1px solid #B7C7D9;      /* fine rules above and below */
+  padding: 0.3rem 0; margin: 1.6rem 0 1rem;                              /* space around it */
+}
+div.paper .paper-heading {                             /* section headings, e.g. "5 Price and payment" */
+  font-weight: 700; color: #1F4E79;                    /* bold, dark blue */
+  border-bottom: 1px solid #B7C7D9;                    /* fine rule below */
+  padding-bottom: 0.15rem; margin: 1.2rem 0 0.6rem;    /* space around it */
+}
+div.paper table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0.4rem 0 0.8rem; }  /* full width */
+div.paper table td { vertical-align: top; padding: 0.5rem 0.7rem; border: none; }  /* no grid lines */
+div.paper table.paper-parties td.filled { background: #EEF3F8; border: 1px solid #B7C7D9; }  /* boxes for the parties */
+div.paper table td.sign-line { border-bottom: 1px solid #8A8170; padding-top: 1.6rem; }  /* line to sign on */
+[class*="st-key-contract_clause_"] {                   /* a clause chosen by the rules */
+  background: #EEF3F8;                                 /* light blue */
+  border-left: 4px solid #1F4E79;                      /* dark blue bar on the left */
+  border-radius: 0 0.3rem 0.3rem 0;                    /* rounded on the right */
+  padding: 0.6rem 0.9rem 0.3rem;                       /* space inside */
+  margin: 0.2rem 0 0.8rem;                             /* space to the fixed text */
+}
