@@ -315,7 +315,7 @@ clauses:
       stricter validity condition than law. Statutory remedies under Articles 368–369 CO
       remain available, including free repair subject to Article 368 paragraph 2 CO. The
       Contractor shall be allowed a reasonable opportunity to cure where required by law.
-      The limitation period for defect claims is five years from acceptance, subject to
+      The limitation period for defect claims is five years from completion of work, subject to
       the applicable statutory rules. Nothing in this contract shortens these protected
       periods or restricts free repair in advance.
     inputs: [defect_notice_contact]           # App. D "Inputs"
