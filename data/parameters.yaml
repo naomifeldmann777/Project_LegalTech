@@ -20,29 +20,46 @@
 #   - Contract skeleton (Construction_Contract_Skeleton_EN): fields used by the template
 #   - Diagrams PDF chapter 8: ER entity PARAMETER
 # Decisions used (IDs from the team's decision list): D2, D13, D14, D15, D16, D22, D30.
-# Topic 5 "Termination": fields and question texts from App. B and note sheet 5. The
-#   answer labels and help texts of topic 5 are team drafts, NOT YET APPROVED by the law student.
-# Left out for now: all fields of topics 2-4.
+# Topics 2-5: fields and question texts from App. B and the note sheets. The answer
+#   labels and help texts of topics 2-5 are team drafts, NOT YET APPROVED by the law student.
 # Left out on purpose (team decision, to keep the prototype simple): client_owns_site,
 #   contract_conclusion_channel and personal_contract_required. App. B lists them as "Always",
 #   but they never change the contract text; rule W_CONTEXT is left out with them.
+#   liability_scope is left out too: App. B allows only one value (own_slight_negligence),
+#   which the LIABILITY_CAP text already states.
 # Missing vs. no: an unanswered field is None (null); false is an answered "no" (App. B).
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Questionnaire sections: the blocks of the questionnaire, in this order.
 # -----------------------------------------------------------------------------
+# Each section is one step of the app. "intro" is the short sentence shown under the
+# step's heading (optional key; team drafts, describing the step, not the law).
 sections:
   - id: scope                                 # section ID; the fields below point to it
     title: "Scope check"                      # heading shown in the app (diagrams PDF ch. 1, step 1)
+    intro: "First, check that this contract is one the prototype supports."
   - id: parties_works                         # parties, site, Works and annexes
     title: "Parties and Works"                # proposed heading
+    intro: "Who the parties are, where the Works are carried out and what must be delivered."
   - id: price_payment                         # topic 1
     title: "Price and payment"                # topic name from handoff note sheet 1
+    intro: "The type of price, the amount, VAT and when the Client pays."
+  - id: completion_penalty                    # topic 2
+    title: "Completion date and delay penalty"  # topic name from handoff note sheet 2
+    intro: "Whether there is a binding completion date and a penalty for delay."
+  - id: acceptance_defects                    # topic 3
+    title: "Acceptance and defects"           # topic name from handoff note sheet 3
+    intro: "Where the Client sends defect notices. The protected defect rules are fixed and cannot be changed here."
+  - id: liability                             # topic 4
+    title: "Liability"                        # topic name from handoff note sheet 4
+    intro: "Statutory liability, or a narrow cap for the Contractor’s own slight negligence."
   - id: termination                           # topic 5
     title: "Termination"                      # topic name from handoff note sheet 5
+    intro: "Whether the contract adds termination grounds to the statutory baseline."
   - id: signature                             # who signs for the Contractor
     title: "Signature"                        # proposed heading
+    intro: "Who signs the contract for the Contractor."
 
 # -----------------------------------------------------------------------------
 # Fields (ER entity PARAMETER), in questionnaire order.
@@ -281,6 +298,115 @@ fields:
         question: "Advance payment?"          # proposed column label
         help_text: "Does this instalment become payable before its corresponding work is performed? This differs from an estimated-price interim payment on account of the final price."  # law packet Task 3
         required: true                        # law packet Task 9: advance must be answered
+
+  # ===== Section "Completion date and delay penalty" (topic 2) ================
+
+  # --- completion_date (App. B) -----------------------------------------------
+  - id: completion_date                       # field ID; also {completion_date} in DEADLINE_FIXED and the penalty clauses
+    section: completion_penalty               # questionnaire section
+    type: date                                # App. B: date or null
+    question: "By what binding date must the Works be complete and ready for delivery?"  # App. B
+    help_text: "Leave empty if no binding completion date is agreed. A delay penalty needs a binding date."  # team draft from App. B and C
+    required: false                           # App. B: optional; R_PEN_01 reports it when a penalty is chosen
+
+  # --- completion_definition (App. B) -----------------------------------------
+  - id: completion_definition                 # field ID; also {completion_definition} in DEADLINE_FIXED
+    section: completion_penalty               # questionnaire section
+    type: long_text                           # several lines
+    question: "What work/result must be ready by that date?"  # App. B
+    active_when: {field: completion_date, op: is_filled}  # App. B: "completion_date is present"
+    required: true                            # required while active
+    checked_by: R_DATE                        # a missing definition is reported by R_DATE, not R_REQUIRED (D16)
+
+  # --- delay_penalty (App. B) -------------------------------------------------
+  - id: delay_penalty                         # field ID
+    section: completion_penalty               # questionnaire section
+    type: boolean                             # yes / no; App. B: "no default consent", so nothing is preselected
+    question: "Should Contractor-responsible delay trigger a penalty?"  # App. B
+    required: true                            # App. B: always
+
+  # --- penalty_amount (App. B) ------------------------------------------------
+  - id: penalty_amount                        # field ID; also {penalty_amount} in the penalty clauses
+    section: completion_penalty               # questionnaire section
+    type: decimal_chf                         # money in CHF
+    decimals: 2                               # CHF cents
+    question: "How much per calendar day or week?"  # App. B
+    active_when: {field: delay_penalty, op: equals, value: true}  # App. B: "delay_penalty = true"
+    required: true                            # required while active
+    checked_by: R_PEN_02                      # a missing or non-positive amount is reported by R_PEN_02 (D16)
+
+  # --- penalty_period (App. B) ------------------------------------------------
+  - id: penalty_period                        # field ID; chooses {penalty_period_text}
+    section: completion_penalty               # questionnaire section
+    type: enum                                # one answer from the list below
+    question: "Use a day or week rate?"       # App. B
+    allowed_values:                           # App. B: day / week
+      - value: day                            # stored value
+        label: "Per calendar day"             # team draft from the App. D penalty_period_text wording
+      - value: week                           # stored value
+        label: "Per calendar week"            # team draft from the App. D penalty_period_text wording
+    active_when: {field: delay_penalty, op: equals, value: true}  # App. B: "delay_penalty = true"
+    required: true                            # required while active
+    checked_by: R_PEN_02                      # a missing period is reported by R_PEN_02 (D16)
+
+  # --- penalty_cap (App. B) ---------------------------------------------------
+  - id: penalty_cap                           # field ID; also {penalty_cap} in PENALTY_CAPPED
+    section: completion_penalty               # questionnaire section
+    type: decimal_percent                     # App. B: decimal percent or null
+    decimals: 2                               # up to 2 decimal places
+    question: "What maximum percentage applies?"  # App. B
+    help_text: "Leave empty for no contractual maximum. 0 does not mean no maximum. No statutory safe percentage exists."  # team draft from App. B and note sheet 2
+    active_when: {field: delay_penalty, op: equals, value: true}  # only asked for a penalty
+    required: false                           # App. B: optional; empty selects PENALTY_UNCAPPED
+
+  # --- penalty_cap_basis_chf (App. B) -----------------------------------------
+  - id: penalty_cap_basis_chf                 # field ID; also {penalty_cap_basis_chf} in PENALTY_CAPPED
+    section: completion_penalty               # questionnaire section
+    type: decimal_chf                         # money in CHF
+    decimals: 2                               # CHF cents
+    question: "Which fixed CHF amount is the percentage cap based on?"  # App. B
+    # App. B: "required > 0 for a capped estimate contract", so it is only asked for an estimate
+    active_when:
+      all:
+        - {field: delay_penalty, op: equals, value: true}
+        - {field: penalty_cap, op: is_filled}
+        - {field: price_type, op: equals, value: estimate}
+    required: true                            # required while active
+    checked_by: R_PEN_02                      # a missing or non-positive base is reported by R_PEN_02 (D16)
+    # optional key: the field whose answer fills the clause gap when this field has none.
+    # App. B: "Derived from contract_price for fixed", so a fixed price fills the gap itself.
+    default_from: contract_price
+
+  # ===== Section "Acceptance and defects" (topic 3) ===========================
+
+  # --- defect_notice_contact (App. B) -----------------------------------------
+  - id: defect_notice_contact                 # field ID; also {defect_notice_contact} in DEFECTS_STANDARD
+    section: acceptance_defects               # questionnaire section
+    type: text                                # App. B: text
+    question: "To which Contractor contact/address should defect notices be sent?"  # App. B
+    required: true                            # App. B: always; non-empty (missing = R_REQUIRED)
+
+  # ===== Section "Liability" (topic 4) ========================================
+
+  # --- liability_limit (App. B) -----------------------------------------------
+  - id: liability_limit                       # field ID
+    section: liability                        # questionnaire section
+    type: boolean                             # yes / no; true selects the cap
+    # App. B asks "Use statutory liability or the prototype’s narrow slight-negligence cap?";
+    # turned into a yes/no question for the yes/no buttons (team draft)
+    question: "Use the prototype’s narrow slight-negligence cap instead of statutory liability?"
+    help_text: "The cap covers only contractual damages caused by the Contractor’s own slight negligence. It never covers intent or gross negligence, personal injury, auxiliary persons, defect remedies, delay penalties or the termination settlement."  # team draft from note sheet 4 and App. D
+    required: true                            # App. B: always
+
+  # --- liability_cap_amount (App. B) ------------------------------------------
+  - id: liability_cap_amount                  # field ID; also {liability_cap_amount} in LIABILITY_CAP
+    section: liability                        # questionnaire section
+    type: decimal_chf                         # money in CHF
+    decimals: 2                               # CHF cents
+    question: "What aggregate cap applies to the defined damages category?"  # App. B
+    active_when: {field: liability_limit, op: equals, value: true}  # App. B: "liability_limit = true"
+    required: true                            # required while active
+    checked_by: R_LIAB_VALUE                  # a missing or non-positive amount is reported by R_LIAB_VALUE (D16)
 
   # ===== Section "Termination" (topic 5) ======================================
 

@@ -1,0 +1,21 @@
+# =============================================================================
+# P23.yaml - test scenario P23: delay penalty without a completion date (= handoff E3)
+# -----------------------------------------------------------------------------
+# Source: handoff App. E (E3: "R_PEN_01 blocks generation, labelled PRODUCT"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P23                                       # scenario ID, same as the file name
+title: "Delay penalty without a date"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  delay_penalty: true                         # penalty ...
+  penalty_amount: "700"                       # ... with amount,
+  penalty_period: week                        # period
+  penalty_cap: "5"                            # and maximum, but no completion_date
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PEN_01]                          # E3
+  error_fields:                               # where the error is shown
+    R_PEN_01: [completion_date]               # next to the date
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

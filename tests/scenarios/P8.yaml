@@ -16,7 +16,7 @@ answers:                                      # what differs from base_project.y
     - {name: "Second half", trigger: "Works delivered", percent: "50", invoice_due_days: 30, advance: false}
 expected:                                     # the result the engine must give
   can_generate: true                          # no error
-  clauses: [PRICE_FIXED, PAYMENT_MILESTONE, TERMINATION_LAW]   # selected clauses
+  clauses: [PRICE_FIXED, PAYMENT_MILESTONE, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]   # selected clauses
   errors: []                                  # no errors
   warnings: [W_CONSUMER]                      # no advance, so no W_PRICE
   contract_text_contains:                     # the two instalments add up exactly to 99,999.99

@@ -35,6 +35,9 @@ answers:                                      # the answers {field ID: value}; f
   contract_price: "100000.00"                 # CHF 100,000.00 (in quotes)
   vat_treatment: included                     # the price includes VAT
   payment_type: on_completion                 # payment on delivery
+  delay_penalty: false                        # no delay penalty and no binding date (handoff E1)
+  defect_notice_contact: "Muster Bau AG, Werkstrasse 5, 3000 Bern"  # where defect notices go
+  liability_limit: false                      # statutory liability (handoff E1)
   termination_reasons: false                  # no extra grounds: statutory baseline (handoff E1)
   contractor_signatory_name: "Max Muster"     # who signs for the Contractor
   contractor_signatory_capacity: "Managing director"  # in which capacity

@@ -1,0 +1,19 @@
+# =============================================================================
+# P31.yaml - test scenario P31: liability cap of CHF 100,000
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (SEL_LIABILITY_CAP, W_LIAB: "Any cap selected").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P31                                       # scenario ID, same as the file name
+title: "Liability cap"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  liability_limit: true                       # the narrow cap
+  liability_cap_amount: "100000.00"           # CHF 100,000
+expected:                                     # the result the engine must give
+  can_generate: true                          # a warning does not block
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_CAP, TERMINATION_LAW]  # selected clauses
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER, W_LIAB]              # every cap needs a review
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "own slight negligence is limited to CHF 100,000.00."

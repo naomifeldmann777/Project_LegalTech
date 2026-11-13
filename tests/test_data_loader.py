@@ -196,6 +196,12 @@ def test_rule_without_message_is_reported(data_copy):
     assert "R_CROSS, case 1: no message" in error_message(data_copy)  # clear message
 
 
+def test_unknown_default_from_field_is_reported(data_copy):
+    """default_from must name a field of parameters.yaml."""
+    break_file(data_copy, "parameters.yaml", "default_from: contract_price", "default_from: contract_prize")  # typo
+    assert "field penalty_cap_basis_chf: default_from 'contract_prize' is not a field" in error_message(data_copy)  # clear message
+
+
 def test_derived_text_for_several_answers_needs_join_with(data_copy):
     """A derived text chosen by an enum_list field must say how its texts are joined."""
     break_file(data_copy, "clauses.yaml", 'join_with: "; "', 'joined_with: "; "')  # the key is misspelled

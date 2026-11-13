@@ -1,0 +1,26 @@
+# =============================================================================
+# P26.yaml - test scenario P26: estimate with a capped delay penalty and its own base
+# -----------------------------------------------------------------------------
+# Source: handoff App. B (penalty_cap_basis_chf: "required > 0 for a capped estimate contract").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P26                                       # scenario ID, same as the file name
+title: "Estimate with capped penalty and base"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  price_type: estimate                        # estimated price
+  estimate_basis: "Labour at CHF 95 per hour plus evidenced materials and expenses"  # pricing basis
+  completion_date: 2027-06-30                 # binding completion date
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+  delay_penalty: true                         # penalty
+  penalty_amount: "150"                       # CHF 150 ...
+  penalty_period: day                         # ... per day
+  penalty_cap: "10"                           # maximum 10 % ...
+  penalty_cap_basis_chf: "80000.00"           # ... of CHF 80,000
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_ESTIMATE, PAYMENT_ON_COMPLETION, DEADLINE_FIXED, PENALTY_CAPPED, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # selected clauses
+  errors: []                                  # no errors
+  warnings: [W_PRICE, W_CONSUMER]             # estimate warning
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "limited to 10% of the agreed base of CHF 80,000.00"

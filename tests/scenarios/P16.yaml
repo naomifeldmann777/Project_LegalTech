@@ -13,7 +13,7 @@ answers:                                      # what differs from base_project.y
   cure_period_days: 30                        # a positive period
 expected:                                     # the result the engine must give
   can_generate: true                          # no error, "Generate" allowed
-  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, TERMINATION_FOR_CAUSE]  # selected clauses, in contract order
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_FOR_CAUSE]  # selected clauses, in contract order
   errors: []                                  # no errors
   warnings: [W_CONSUMER, W_CURE]              # E7: the number alone does not prove reasonableness
   contract_text_contains:                     # texts that must appear in the filled clauses

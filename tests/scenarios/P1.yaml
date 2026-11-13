@@ -12,6 +12,6 @@ title: "Basic project: fixed price, payment on delivery"  # short description fo
 answers: {}                                   # what differs from base_project.yaml: nothing
 expected:                                     # the result the engine must give
   can_generate: true                          # no error, "Generate" allowed
-  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, TERMINATION_LAW]  # selected clauses, in contract order
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # selected clauses, in contract order
   errors: []                                  # rule IDs of the errors (compared as a set)
   warnings: [W_CONSUMER]                      # rule IDs of the warnings (compared as a set)

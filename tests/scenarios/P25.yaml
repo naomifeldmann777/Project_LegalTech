@@ -1,0 +1,23 @@
+# =============================================================================
+# P25.yaml - test scenario P25: delay penalty with a maximum of 0
+# -----------------------------------------------------------------------------
+# Source: handoff App. B ("Never treat penalty_cap = 0 as uncapped") and App. C (R_PEN_02: "cap <= 0").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P25                                       # scenario ID, same as the file name
+title: "Penalty maximum 0"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  completion_date: 2027-06-30                 # binding completion date
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+  delay_penalty: true                         # penalty
+  penalty_amount: "700"                       # amount
+  penalty_period: week                        # period
+  penalty_cap: "0"                            # 0 is an error, never "no maximum"
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PEN_02]                          # App. C
+  error_fields:                               # where the error is shown
+    R_PEN_02: [penalty_cap]                   # next to the maximum
+  warnings: [W_CONSUMER]                      # 0 is entered, so no W_PEN

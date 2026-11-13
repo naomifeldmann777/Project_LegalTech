@@ -1,0 +1,17 @@
+# =============================================================================
+# P33.yaml - test scenario P33: statutory liability, but an old cap amount is still in the answers
+# -----------------------------------------------------------------------------
+# Source: handoff App. B "Inactive inputs are ignored".
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P33                                       # scenario ID, same as the file name
+title: "Old cap amount is ignored"  # short description for the test report
+answers:                                      # what differs from base_project.yaml (liability_limit stays false)
+  liability_cap_amount: "50000.00"            # old amount
+expected:                                     # the result the engine must give
+  can_generate: true                          # the old amount causes no error
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # statutory liability
+  errors: []                                  # no R_LIAB_VALUE
+  warnings: [W_CONSUMER]                      # no W_LIAB
+  ignored_fields: [liability_cap_amount]      # listed as ignored

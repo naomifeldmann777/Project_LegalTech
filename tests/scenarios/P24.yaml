@@ -1,0 +1,23 @@
+# =============================================================================
+# P24.yaml - test scenario P24: delay penalty without a maximum
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (W_PEN: "Penalty true and cap null").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P24                                       # scenario ID, same as the file name
+title: "Delay penalty without a maximum"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  completion_date: 2027-06-30                 # binding completion date
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+  delay_penalty: true                         # penalty ...
+  penalty_amount: "100"                       # ... CHF 100 ...
+  penalty_period: day                         # ... per day, no maximum
+expected:                                     # the result the engine must give
+  can_generate: true                          # a warning does not block
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, DEADLINE_FIXED, PENALTY_UNCAPPED, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # App. C
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER, W_PEN]               # no contractual maximum
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "CHF 100.00 per calendar day of delay"
+    - "No contractual maximum is agreed."

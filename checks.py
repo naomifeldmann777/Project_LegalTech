@@ -2,9 +2,9 @@
 
 What this file is for:
     A condition in rules.yaml looks at one answer at a time, for example
-    "contract_price at_most 0". Four rules need more than that: they have to go
-    through all fields, add up the milestone percentages, or count the selected
-    clauses. Those four checks are small Python functions, all listed here in one
+    "contract_price at_most 0". Five rules need more than that: they have to go
+    through all fields, add up the milestone percentages, compare two answers, or
+    count the selected clauses. Those checks are small Python functions, all listed here in one
     place (AI_PROMPT section 11). A rule names its check in rules.yaml:
         cases:
           - when: {field: payment_type, op: equals, value: milestones}
@@ -28,11 +28,12 @@ How it fits into the project:
 
 Which documents it implements:
     - Handoff App. B: required fields, allowed answers, milestone records
-    - Handoff App. C: R_REQUIRED, R_PAY, W_PRICE (advance), R_CROSS (cardinality)
+    - Handoff App. C: R_REQUIRED, R_PAY, W_PRICE (advance), R_DATE (date order), R_CROSS (cardinality)
     - Law packet Task 9 (R_PAY also covers unanswered advance and positive amounts)
     - Decisions D16 (checked_by), D22 (milestones), D24 (cardinality per slot), D42
 """
 
+from datetime import date  # R_DATE compares two dates
 from decimal import Decimal  # exact numbers: percentages and amounts are compared exactly
 
 from placeholders import milestone_amounts  # the same rounding rule as in the contract (D23)
@@ -174,6 +175,26 @@ def any_advance_milestone(answers, knowledge, selected):
 
 
 # ---------------------------------------------------------------------------
+# R_DATE (handoff App. C): completion date before the contract date
+# ---------------------------------------------------------------------------
+
+def completion_before_contract_date(answers, knowledge, selected):
+    """Return ["completion_date"] if the completion date is before the contract date, otherwise [].
+
+    A YAML condition compares one answer with a fixed value, so comparing two answers
+    needs this check. A missing date is reported elsewhere (R_REQUIRED), so the check
+    only compares when both dates are there.
+
+    Example: contract 1 November 2026, completion 1 October 2026 -> ["completion_date"]
+    """
+    completion = answers.get("completion_date")  # the binding completion date
+    contract = answers.get("contract_date")  # the date the contract is concluded
+    if isinstance(completion, date) and isinstance(contract, date) and completion < contract:  # completed before it starts
+        return ["completion_date"]  # report the completion date
+    return []  # no problem
+
+
+# ---------------------------------------------------------------------------
 # R_CROSS, cardinality part (handoff App. C, decision D24): clauses per slot
 # ---------------------------------------------------------------------------
 
@@ -204,5 +225,6 @@ CHECKS = {
     "missing_required_fields": missing_required_fields,  # R_REQUIRED
     "milestone_problems": milestone_problems,  # R_PAY
     "any_advance_milestone": any_advance_milestone,  # W_PRICE (advance case)
+    "completion_before_contract_date": completion_before_contract_date,  # R_DATE
     "selection_cardinality": selection_cardinality,  # R_CROSS (cardinality)
 }  # a new check = a new function above + one line here

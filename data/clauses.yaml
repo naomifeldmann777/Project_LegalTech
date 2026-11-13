@@ -30,15 +30,24 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Topics (ER entity TOPIC). Topics 1 and 5 are built; topics 2-4 come later.
+# Topics (ER entity TOPIC): the five topics of the handoff note sheets.
 # -----------------------------------------------------------------------------
 topics:
   - id: PRICE_PAYMENT                         # topic ID (decision D9); never change it
     name: "Price and payment"                 # name shown on the review screen (handoff note sheet 1)
     order_in_contract: 1                      # orders the review screen (D31); the contract order comes from the skeleton
+  - id: COMPLETION_PENALTY                    # topic 2
+    name: "Completion date and delay penalty"  # handoff note sheet 2
+    order_in_contract: 2                      # the number of the note sheet
+  - id: ACCEPTANCE_DEFECTS                    # topic 3
+    name: "Acceptance and defects"            # handoff note sheet 3
+    order_in_contract: 3                      # the number of the note sheet
+  - id: LIABILITY                             # topic 4
+    name: "Liability"                         # handoff note sheet 4
+    order_in_contract: 4                      # the number of the note sheet
   - id: TERMINATION                           # topic 5
     name: "Termination"                       # handoff note sheet 5
-    order_in_contract: 5                      # the number of the note sheet, so topics 2-4 fit in between
+    order_in_contract: 5                      # the number of the note sheet
 
 # -----------------------------------------------------------------------------
 # Slots: the places in the Word template where a selected clause is put
@@ -52,6 +61,21 @@ slots:
     max: 1                                    # ... and at most 1
   - id: payment_clause                        # skeleton section 5
     min: 1                                    # App. C: exactly one payment variant
+    max: 1                                    # at most 1
+  - id: deadline_clause                       # skeleton section 6
+    min: 0                                    # App. C: "at most one deadline" variant; none without a date
+    max: 1                                    # at most 1
+  - id: penalty_clause                        # skeleton section 6
+    min: 0                                    # App. C: "at most one penalty variant"; "No-penalty needs no extra clause"
+    max: 1                                    # at most 1
+  - id: acceptance_clause                     # skeleton section 7
+    min: 1                                    # App. C: "exactly two acceptance/defect clauses", one per slot
+    max: 1                                    # at most 1
+  - id: defects_clause                        # skeleton section 7
+    min: 1                                    # the second of the two
+    max: 1                                    # at most 1
+  - id: liability_clause                      # skeleton section 8
+    min: 1                                    # App. C: exactly one liability variant
     max: 1                                    # at most 1
   - id: termination_clause                    # skeleton section 9
     min: 1                                    # App. C: exactly one termination variant
@@ -164,6 +188,199 @@ clauses:
       own_intent_gross_preserved: true
       statutory_exit_preserved: true
 
+  # --- DEADLINE_FIXED (handoff App. D) ----------------------------------------
+  - id: DEADLINE_FIXED                        # clause ID from App. D (selected by SEL_DEADLINE_FIXED)
+    topic: COMPLETION_PENALTY                 # topic 2
+    slot: deadline_clause                     # place in skeleton section 6
+    title: "Binding completion date"          # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The Contractor shall complete the Works and make them ready for delivery by
+      {completion_date}. Completion means: {completion_definition}. This is a binding
+      date. The Contractor shall promptly notify the Client of any impediment and its
+      expected effect on time. The parties shall record any agreed extension in writing.
+      Statutory defences and relief remain reserved; this date alone does not waive a
+      legally required cure period.
+    inputs: [completion_date, completion_definition]  # App. D "Inputs"
+    citations: [CO_102, CO_107_TO_108, CO_365, CO_366_1]  # App. D "Basis": CO 102, 107–108, 365(3), 366
+    basis_note: "CO 102, 107–108, 365(3), 366; written extension process is contractual."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- PENALTY_CAPPED (handoff App. D) ----------------------------------------
+  - id: PENALTY_CAPPED                        # clause ID from App. D (selected by SEL_PENALTY_CAPPED)
+    topic: COMPLETION_PENALTY                 # topic 2
+    slot: penalty_clause                      # place in skeleton section 6
+    title: "Delay penalty with a maximum"     # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      If, for reasons attributable to the Contractor, the Works are not complete and
+      ready for delivery by {completion_date}, as validly extended, the Contractor shall
+      pay CHF {penalty_amount} per {penalty_period_text} of delay. Delay is measured in
+      calendar days; a weekly rate is applied proportionally at one seventh per day. The
+      total penalty is limited to {penalty_cap}% of the agreed base of CHF
+      {penalty_cap_basis_chf}. The Client may require completion as well as the time
+      penalty. The Client must expressly reserve the penalty when accepting late
+      performance. The penalty is credited against damages for the same delay; additional
+      loss is recoverable only on the applicable statutory conditions, including Article
+      161 paragraph 2 CO. Judicial reduction of an excessive penalty remains available.
+      The penalty does not give the Contractor a right to abandon the Works.
+    inputs: [completion_date, penalty_amount, penalty_period_text, penalty_cap, penalty_cap_basis_chf]  # App. D "Inputs"
+    # App. D "Basis": CO 160(2)–(3), 161, 163, plus the court decisions on CO 163(3) and 160(2) (research document topic 2)
+    citations: [CO_160, CO_161, CO_163, BGE_114_II_264, BGE_97_II_350]
+    basis_note: "CO 160(2)–(3), 161, 163. Pro-rata calculation and agreed base are product choices."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- PENALTY_UNCAPPED (handoff App. D) --------------------------------------
+  - id: PENALTY_UNCAPPED                      # clause ID from App. D (selected by SEL_PENALTY_UNCAPPED)
+    topic: COMPLETION_PENALTY                 # topic 2
+    slot: penalty_clause                      # same slot as PENALTY_CAPPED; only one of them is selected
+    title: "Delay penalty without a maximum"  # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      If, for reasons attributable to the Contractor, the Works are not complete and
+      ready for delivery by {completion_date}, as validly extended, the Contractor shall
+      pay CHF {penalty_amount} per {penalty_period_text} of delay. Delay is measured in
+      calendar days; a weekly rate is applied proportionally at one seventh per day. No
+      contractual maximum is agreed. The Client may require completion as well as the
+      time penalty. The Client must expressly reserve the penalty when accepting late
+      performance. The penalty is credited against damages for the same delay; additional
+      loss is recoverable only on the applicable statutory conditions, including Article
+      161 paragraph 2 CO. Judicial reduction of an excessive penalty remains available.
+      The penalty does not give the Contractor a right to abandon the Works.
+    inputs: [completion_date, penalty_amount, penalty_period_text]  # App. D "Inputs"
+    # App. D "Basis": CO 160–163, plus the court decisions on CO 163(3) and 160(2) (research document topic 2)
+    citations: [CO_160, CO_161, CO_163, BGE_114_II_264, BGE_97_II_350]
+    basis_note: "CO 160–163. Uncapped exposure requires a review warning."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- ACCEPTANCE_PROTOCOL (handoff App. D) -----------------------------------
+  - id: ACCEPTANCE_PROTOCOL                   # clause ID from App. D (selected by SEL_ACCEPTANCE_PROTOCOL)
+    topic: ACCEPTANCE_DEFECTS                 # topic 3
+    slot: acceptance_clause                   # place in skeleton section 7
+    title: "Acceptance protocol"              # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The Contractor shall notify the Client when the Works are ready for delivery and
+      joint inspection. The parties shall inspect promptly and record the delivery date,
+      acceptance position, defects and reservations in a protocol. Signing records those
+      statements and does not automatically waive listed defects, latent defects or
+      mandatory rights. Any penalty reservation shall be recorded expressly.
+    inputs: []                                # App. D "Inputs: None"
+    # App. D "Basis": CO 367, 370 and 160(2), plus the court decision on acceptance and the penalty reservation
+    citations: [CO_367, CO_370, CO_160, BGE_97_II_350]
+    basis_note: "CO 367, 370 and 160(2); protocol is a contractual process."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- DEFECTS_STANDARD (handoff App. D) --------------------------------------
+  - id: DEFECTS_STANDARD                      # clause ID from App. D (selected by SEL_DEFECTS_STANDARD)
+    topic: ACCEPTANCE_DEFECTS                 # topic 3
+    slot: defects_clause                      # place in skeleton section 7
+    title: "Defects"                          # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The Client shall inspect the delivered Works as soon as reasonably practicable.
+      Apparent defects must be notified within 60 days after delivery; defects not
+      recognisable at acceptance and proper inspection must be notified within 60 days
+      after discovery. Notices should identify the defect and be sent to
+      {defect_notice_contact}; written evidence is recommended, without imposing a
+      stricter validity condition than law. Statutory remedies under Articles 368–369 CO
+      remain available, including free repair subject to Article 368 paragraph 2 CO. The
+      Contractor shall be allowed a reasonable opportunity to cure where required by law.
+      The limitation period for defect claims is five years from acceptance, subject to
+      the applicable statutory rules. Nothing in this contract shortens these protected
+      periods or restricts free repair in advance.
+    inputs: [defect_notice_contact]           # App. D "Inputs"
+    # App. D "Basis": CO 366(2), 367(1bis), 368(2)–(3), 369, 370(4), 371(2)–(3)
+    citations: [CO_366_2, CO_367, CO_368, CO_369, CO_370, CO_371]
+    basis_note: "CO 366(2), 367(1bis), 368(2)–(3), 369, 370(4), 371(2)–(3)."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- LIABILITY_LAW (handoff App. D) -----------------------------------------
+  - id: LIABILITY_LAW                         # clause ID from App. D (selected by SEL_LIABILITY_LAW)
+    topic: LIABILITY                          # topic 4
+    slot: liability_clause                    # place in skeleton section 8
+    title: "Statutory liability"              # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The parties’ liability is governed by Swiss law, including Articles 97–101 and the
+      applicable contract-for-work provisions. This clause introduces no contractual cap
+      or exclusion. Defect remedies and any agreed penalty remain subject to their own
+      conditions.
+    inputs: []                                # App. D "Inputs: None"
+    # App. D "Basis": CO 97–101 and 364–371 (CO 366–371 are cited by the topic 2, 3 and 5 clauses),
+    # plus the court decision on auxiliary persons (research document topic 4)
+    citations: [CO_97_TO_101, CO_364, CO_365, BGE_95_II_43]
+    basis_note: "CO 97–101 and 364–371."      # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
+  # --- LIABILITY_CAP (handoff App. D) -----------------------------------------
+  - id: LIABILITY_CAP                         # clause ID from App. D (selected by SEL_LIABILITY_CAP)
+    topic: LIABILITY                          # topic 4
+    slot: liability_clause                    # same slot as LIABILITY_LAW; only one of them is selected
+    title: "Liability cap"                    # team draft, NOT YET APPROVED by the law student
+    version: "1.0"                            # App. D wording, unchanged
+    # clause text, word for word from App. D
+    text: >-
+      The Contractor’s aggregate liability for contractual damages caused by its own
+      slight negligence is limited to CHF {liability_cap_amount}. The cap does not apply
+      to intent or gross negligence, death or personal injury, liability for auxiliary
+      persons under Article 101 CO, defect remedies, agreed delay penalties, termination
+      settlement or any liability that cannot lawfully be limited. In all other respects
+      statutory liability applies.
+    inputs: [liability_cap_amount]            # App. D "Inputs"
+    # App. D "Basis": CO 100–101, plus the court decisions on auxiliary persons and gross negligence (research document topic 4)
+    citations: [CO_100, CO_101, BGE_95_II_43, BGER_4C_92_2007]
+    basis_note: "CO 100–101; narrower exclusions from the cap are product choices."  # App. D "Basis" line
+    metadata:                                 # App. C safety flags, all true
+      notices_preserved: true
+      limitation_preserved: true
+      free_repair_preserved: true
+      judicial_reduction_preserved: true
+      own_intent_gross_preserved: true
+      statutory_exit_preserved: true
+
   # --- TERMINATION_LAW (handoff App. D) ---------------------------------------
   - id: TERMINATION_LAW                       # clause ID from App. D (selected by SEL_TERMINATION_LAW)
     topic: TERMINATION                        # topic 5
@@ -247,6 +464,14 @@ derived_placeholders:
     text_by_answer:                           # App. D, word for word
       fixed: "The schedule allocates the fixed price."
       estimate: "These are advances against the final price. Any balance is paid, or excess refunded, on final reconciliation at delivery."
+
+  # --- penalty_period_text (App. D "Deterministic text assembly") --------------
+  - id: penalty_period_text                   # placeholder used in PENALTY_CAPPED and PENALTY_UNCAPPED
+    built_from: [penalty_period]              # depends only on the penalty period
+    chosen_by: penalty_period                 # day or week
+    text_by_answer:                           # App. D, word for word
+      day: "calendar day"
+      week: "calendar week"
 
   # --- termination_reason_text (App. D "Deterministic text assembly") ----------
   - id: termination_reason_text               # placeholder used in TERMINATION_FOR_CAUSE

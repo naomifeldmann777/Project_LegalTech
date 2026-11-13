@@ -17,9 +17,13 @@
 #   - Legal handoff note sheet 1 "Articles" and "Consumer point": citation summaries
 #   - Legal handoff note sheet 5 "Articles" and "Consumer point": summaries of the topic 5 citations
 #   - Diagrams PDF chapter 8: ER entities LEGAL_SOURCE and CITATION
+#   - Legal handoff note sheets 2, 3 and 4 "Articles" and "Default rule", App. A6:
+#     summaries of the topic 2-4 citations
 #   - Research document "Price, Payment and Termination" (Nicholas, 4 Nov 2026),
 #     section 6 and sources list: court decisions, their meaning and their links
-# Scope: topic 1 "Price and payment" and topic 5 "Termination". Later topics add entries.
+#   - Research documents on topics 2, 3 and 4 (Nicholas, 10 Nov 2026), "Interpretation"
+#     sections and sources lists: the court decisions of topics 2-4 and their links
+# Scope: all five topics.
 # =============================================================================
 
 # Version of the legal basis used by this rule package (decision D12).
@@ -79,7 +83,7 @@ sources:
 # Citations (ER entity CITATION): one entry per article or paragraph range,
 # exactly as the law packet (Task 2) lists them (decisions D11 and R5).
 # Article and paragraph are stored separately from the source URL (handoff App. F).
-# Only the citations used by the clauses and rules of topics 1 and 5 are listed here.
+# Only the citations used by the clauses and rules are listed here.
 # -----------------------------------------------------------------------------
 citations:
 
@@ -219,6 +223,131 @@ citations:
     summary: "death/incapacity of a personally essential Contractor."  # note sheet 5
 
   # ---------------------------------------------------------------------------
+  # Topics 2-4: the articles named in the App. D "Basis" lines and in App. C.
+  # Summaries are copied from handoff note sheets 2, 3 and 4 (CO 366(2): App. A6).
+  # ---------------------------------------------------------------------------
+
+  # Art. 97-101 CO - used by clause LIABILITY_LAW (App. D "Basis": CO 97–101)
+  - id: CO_97_TO_101                          # citation ID with an article range
+    source: S1                                # Code of Obligations
+    article: "97-101"                         # article range as text
+    paragraph: null                           # whole articles
+    label: "Art. 97-101 CO"                   # shown on the review screen
+    summary: "contract damages need breach, loss and causation; fault is presumed under CO 97."  # note sheet 4 "Default rule"
+
+  # Art. 100 CO - used by clause LIABILITY_CAP and rule W_LIAB
+  - id: CO_100                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "100"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 100 CO"                      # shown on the review screen
+    summary: "advance exclusion of own intent/gross negligence is void."  # note sheet 4
+
+  # Art. 101 CO - used by clause LIABILITY_CAP
+  - id: CO_101                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "101"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 101 CO"                      # shown on the review screen
+    summary: "auxiliary-person liability has its own exclusion rules."  # note sheet 4
+
+  # Art. 102 CO - used by clause DEADLINE_FIXED
+  - id: CO_102                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "102"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 102 CO"                      # shown on the review screen
+    summary: "default follows a reminder or expiry of an agreed fixed date."  # note sheet 2
+
+  # Art. 160 CO - used by clauses PENALTY_CAPPED, PENALTY_UNCAPPED, ACCEPTANCE_PROTOCOL and rule R_PEN_01
+  - id: CO_160                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "160"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 160 CO"                      # shown on the review screen
+    summary: "a time penalty may accompany performance, subject to reservation."  # note sheet 2
+
+  # Art. 161 CO - used by clauses PENALTY_CAPPED and PENALTY_UNCAPPED
+  - id: CO_161                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "161"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 161 CO"                      # shown on the review screen
+    summary: "no loss is needed for the penalty; excess loss requires proof of fault."  # note sheet 2
+
+  # Art. 163 CO - used by clauses PENALTY_CAPPED, PENALTY_UNCAPPED and rule W_PEN
+  - id: CO_163                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "163"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 163 CO"                      # shown on the review screen
+    summary: "parties set the amount, but courts reduce excess."  # note sheet 2
+
+  # Art. 364 CO - used by clause LIABILITY_LAW (App. D "Basis": CO 364–371)
+  - id: CO_364                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "364"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 364 CO"                      # shown on the review screen
+    summary: "Contractor care duties."         # note sheet 4
+
+  # Art. 365 CO - used by clauses DEADLINE_FIXED and LIABILITY_LAW
+  - id: CO_365                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "365"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 365 CO"                      # shown on the review screen
+    summary: "materials and duty to warn."     # note sheet 4
+
+  # Art. 366 para. 2 CO - used by clause DEFECTS_STANDARD
+  - id: CO_366_2                              # citation ID with one paragraph
+    source: S1                                # Code of Obligations
+    article: "366"                            # article number
+    paragraph: "2"                            # repair by a third party
+    label: "Art. 366 para. 2 CO"              # shown on the review screen
+    summary: "its repair procedure is used by analogy for defects under CO 368(2)."  # handoff App. A6
+
+  # Art. 367 CO - used by clauses ACCEPTANCE_PROTOCOL and DEFECTS_STANDARD
+  - id: CO_367                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "367"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 367 CO"                      # shown on the review screen
+    summary: "prompt inspection and protected 60-day notice for immovable works."  # note sheet 3
+
+  # Art. 368 CO - used by clause DEFECTS_STANDARD
+  - id: CO_368                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "368"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 368 CO"                      # shown on the review screen
+    summary: "defect remedies; advance restriction of free repair for building defects is invalid."  # note sheet 3
+
+  # Art. 369 CO - used by clause DEFECTS_STANDARD
+  - id: CO_369                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "369"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 369 CO"                      # shown on the review screen
+    summary: "Client-caused defects may remove remedies."  # note sheet 3
+
+  # Art. 370 CO - used by clauses ACCEPTANCE_PROTOCOL and DEFECTS_STANDARD
+  - id: CO_370                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "370"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 370 CO"                      # shown on the review screen
+    summary: "approval affects visible defects; latent immovable defects have 60-day notice after discovery."  # note sheet 3
+
+  # Art. 371 CO - used by clause DEFECTS_STANDARD
+  - id: CO_371                                # citation ID
+    source: S1                                # Code of Obligations
+    article: "371"                            # article number
+    paragraph: null                           # whole article
+    label: "Art. 371 CO"                      # shown on the review screen
+    summary: "immovable-work defect claims have protected five-year limitation from acceptance."  # note sheet 3
+
+  # ---------------------------------------------------------------------------
   # Court decisions: citations with their own "url". The review screen shows the
   # label, the one-sentence summary and a "See court decision" link.
   # "article" and "paragraph" name the CO article the decision interprets.
@@ -270,3 +399,39 @@ citations:
     label: "BGE 117 II 273 (1991)"            # shown on the review screen
     summary: "the Client can terminate at any time before completion, but not for free: no fault is needed, and the indemnity can include the Contractor’s lost profit; a changed building plan or financial reasons are no important reason to avoid it."  # research document, section 6; handoff App. A8
     url: "https://servat.unibe.ch/dfr/bge/c2117273.html"  # link from the research document (full text, German)
+
+  # BGE 114 II 264 - used by clauses PENALTY_CAPPED, PENALTY_UNCAPPED and rule W_PEN
+  - id: BGE_114_II_264                        # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "163"                            # the article the decision interprets
+    paragraph: "3"                            # reduction of an excessive penalty
+    label: "BGE 114 II 264 (1988)"            # shown on the review screen
+    summary: "a court reduces an excessive penalty only with restraint, where there is a gross disproportion to the Client's interest in the full penalty; the Contractor must prove the grounds for a reduction."  # research document topic 2, section 8
+    url: "https://www.servat.unibe.ch/dfr/bge/c2114264.html"  # link from the research document (full text, German)
+
+  # BGE 97 II 350 - used by clauses PENALTY_CAPPED, PENALTY_UNCAPPED and ACCEPTANCE_PROTOCOL
+  - id: BGE_97_II_350                         # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "160"                            # the article the decision interprets
+    paragraph: "2"                            # reservation of the penalty
+    label: "BGE 97 II 350 (1971)"             # shown on the review screen
+    summary: "the Client loses a delay penalty by accepting the Works without reservation; the reservation must be made at the latest on acceptance, and taking the Works into use without a defect notice can count as acceptance."  # research documents topics 2 and 3
+    url: "https://app.omnilex.ai/de/sources/court-decision/ch-bge--97-ii-350/timely-reservation-required-for-contractual-penalty-under-art-160-or"  # link from the research documents
+
+  # BGE 95 II 43 - used by clauses LIABILITY_LAW and LIABILITY_CAP
+  - id: BGE_95_II_43                          # citation ID
+    source: BGER                              # Federal Supreme Court
+    article: "101"                            # auxiliary persons (the decision also covers CO 369 and 44)
+    paragraph: null                           # whole article
+    label: "BGE 95 II 43 (1969)"              # shown on the review screen
+    summary: "the Contractor answers for its auxiliary persons; a warning under CO 369 must be clear and reach the right person, and the Client's own share of fault, including that of its architect, reduces the damages."  # research document topic 4, section 6
+    url: "https://servat.unibe.ch/dfr/bge/c2095043.html"  # link from the research document (full text, German)
+
+  # 4C.92/2007 - used by clause LIABILITY_CAP
+  - id: BGER_4C_92_2007                       # citation ID (not published in the BGE collection)
+    source: BGER                              # Federal Supreme Court
+    article: "100"                            # gross negligence
+    paragraph: "1"                            # advance exclusion is void
+    label: "4C.92/2007 (2007)"                # shown on the review screen
+    summary: "negligence is gross where the breached duties of care were elementary and would have been obvious to any reasonable person in the same position."  # research document topic 4, section 6
+    url: "https://app.omnilex.ai/pt/sources/court-decision/ch-bger--4c-92-2007/4c922007"  # link from the research document

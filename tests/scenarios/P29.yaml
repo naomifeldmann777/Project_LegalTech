@@ -1,0 +1,18 @@
+# =============================================================================
+# P29.yaml - test scenario P29: completion date without a completion definition
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (R_DATE: "date has no completion_definition"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P29                                       # scenario ID, same as the file name
+title: "Completion date without definition"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  completion_date: 2027-06-30                 # binding completion date, but no definition
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_DATE]                            # App. C, not R_REQUIRED (D16)
+  error_fields:                               # where the error is shown
+    R_DATE: [completion_definition]           # next to the definition
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

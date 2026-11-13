@@ -1,0 +1,25 @@
+# =============================================================================
+# P27.yaml - test scenario P27: estimate with a capped delay penalty but no base
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (R_PEN_02: "capped estimate without positive cap basis"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P27                                       # scenario ID, same as the file name
+title: "Estimate with capped penalty, no base"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  price_type: estimate                        # estimated price
+  estimate_basis: "Labour at CHF 95 per hour plus evidenced materials and expenses"  # pricing basis
+  completion_date: 2027-06-30                 # binding completion date
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+  delay_penalty: true                         # penalty
+  penalty_amount: "150"                       # amount
+  penalty_period: day                         # period
+  penalty_cap: "10"                           # maximum, but no base
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_PEN_02]                          # App. C
+  error_fields:                               # where the error is shown
+    R_PEN_02: [penalty_cap_basis_chf]         # next to the base
+  warnings: [W_PRICE, W_CONSUMER]             # still shown (Q6)

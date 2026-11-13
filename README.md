@@ -10,9 +10,9 @@ art. 363 ff. Contract language: English.
 > incomplete sections and requires completion and legal review before use. It is not
 > legal advice. Use fictional data only.
 
-**Status:** topics 1 "Price and payment" and 5 "Termination" are complete (6 clauses, 15 rules).
-Topics 2–4 (completion date and delay penalty, acceptance and defects, liability) appear in
-the contract as "Not generated in this prototype".
+**Status:** all five topics are built (13 clauses, 28 rules): price and payment, completion
+date and delay penalty, acceptance and defects, liability, termination. Without a binding
+date, section 6 of the contract only says that no date and no penalty were agreed.
 
 No AI is used inside the app: every decision comes from a written rule in `data/rules.yaml`
 with its legal source.
@@ -36,9 +36,13 @@ source .venv/bin/activate
 streamlit run app.py
 ```
 
-The browser opens at <http://localhost:8501>. Fill in the questionnaire, click
-**Check answers** (once; afterwards the check runs after every change), read the review
-screen and click **Download contract (Word)**. Stop the app with `Ctrl+C`.
+The browser opens at <http://localhost:8501>. The app guides you through 8 short steps
+(one per section of `parameters.yaml`) with **Back** / **Next**; the sidebar lists every
+step with its status (green tick, red mark with the number of errors, grey circle = not
+finished) and lets you jump to any of them. Errors appear below the question: a wrong
+answer at once, a missing answer once you have left its step. The last step, **Check and
+review**, lists all errors per step with a **Go to this step** button; without errors it
+shows the review screen and **Download contract (Word)**. Stop the app with `Ctrl+C`.
 
 After changing a YAML file in `data/`, restart the app (the files are loaded once).
 
@@ -50,7 +54,7 @@ python -m pytest -v
 ```
 
 All tests must pass. They cover the data files, the placeholders and rounding, every rule
-of the engine, the test scenarios P1–P15 and the Word generator.
+of the engine, the test scenarios P1–P33 and the Word generator.
 
 Quick check of the data files only (useful after editing a YAML file):
 
@@ -65,9 +69,9 @@ It prints `All data files are OK: ...` or a list of mistakes with file, rule and
 ## 4. Project structure
 
 ```
-app.py                     Streamlit user interface: questionnaire, messages, review screen, download
+app.py                     Streamlit user interface: step-by-step questionnaire, messages, review screen, download
 engine.py                  rule engine: answers in -> errors, warnings, selected and filled clauses out
-checks.py                  the 4 special checks that rules.yaml refers to by name
+checks.py                  the 5 special checks that rules.yaml refers to by name
 placeholders.py            fills the {placeholders} of a clause; CHF / date formats; milestone rounding
 generator.py               fills the Word template and returns the contract as bytes
 data_loader.py             reads the 4 YAML files and checks them for mistakes
@@ -85,7 +89,7 @@ tests/
   test_engine.py           at least one test per rule, the conditions, the review records
   test_scenarios.py        runs every scenario file through the engine
   test_generator.py        real Word contracts for P1 and P2; refusal on errors
-  scenarios/               base_project.yaml + P1.yaml ... P21.yaml (expected results)
+  scenarios/               base_project.yaml + P1.yaml ... P33.yaml (expected results)
 .streamlit/config.toml     colours of the app
 requirements.txt           pinned library versions
 ```
@@ -97,8 +101,9 @@ data/*.yaml ──> data_loader.py ──> knowledge
                                        │
 answers (app.py) ──> engine.evaluate(answers, knowledge)
                         step 0  ignore inactive and unknown answers
-                        step 1  input errors      R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, R_TERM   (uses checks.py)
-                        step 2  warnings          W_PRICE, W_CONSUMER, W_CURE                    (uses checks.py)
+                        step 1  input errors      R_SCOPE, R_REQUIRED, R_PRICE, R_PAY, R_DATE,
+                                                  R_PEN_01, R_PEN_02, R_LIAB_VALUE, R_TERM       (uses checks.py)
+                        step 2  warnings          W_PRICE, W_CONSUMER, W_PEN, W_LIAB, W_CURE     (uses checks.py)
                                 -> stop here if step 1 found an error
                         step 3  select clauses    SEL_ rules
                         step 4  fill placeholders                                                (uses placeholders.py)
@@ -160,7 +165,9 @@ Decisions never appear in the contract.
 
 ### Add a question
 Add a field to `data/parameters.yaml` (`id`, `section`, `type`, `question`, `required`,
-optional `help_text` and `active_when`). The app shows it automatically. Use `enum_list` when
+optional `help_text`, `active_when` and `default_from` (another field whose answer fills the
+clause gap when this one has none). The app shows it automatically in the step of its
+section. A new section in `sections:` becomes a new step (`title`, optional `intro`). Use `enum_list` when
 the user may choose several answers; a derived text then needs `join_with` in `clauses.yaml`.
 
 ### Add a test scenario

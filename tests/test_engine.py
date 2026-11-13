@@ -58,6 +58,9 @@ def valid_answers():
         "contract_price": Decimal("100000.00"),  # CHF 100,000.00
         "vat_treatment": "included",  # VAT included
         "payment_type": "on_completion",  # payment on delivery
+        "delay_penalty": False,  # no delay penalty (and no binding date)
+        "defect_notice_contact": "Bau AG, Werkweg 5, 3000 Bern",  # where defect notices go
+        "liability_limit": False,  # statutory liability
         "termination_reasons": False,  # no extra grounds: statutory baseline
         "contractor_signatory_name": "Max Bau",  # who signs
         "contractor_signatory_capacity": "Managing director",  # in which capacity
@@ -148,9 +151,9 @@ def test_inactive_milestones_are_ignored(knowledge):
 
 
 def test_unknown_answers_are_ignored(knowledge):
-    """Answers for fields that are not in parameters.yaml (e.g. old penalty values) are ignored."""
-    result = run(knowledge, delay_penalty=False, penalty_cap=Decimal("5"))  # topic 2 fields, not in iteration 1
-    assert result["ignored_fields"] == ["delay_penalty", "penalty_cap"]  # listed as ignored
+    """Answers for fields that are not in parameters.yaml (e.g. client_owns_site, left out on purpose) are ignored."""
+    result = run(knowledge, client_owns_site=True, insurance_cover="1000000")  # fields that do not exist in parameters.yaml
+    assert result["ignored_fields"] == ["client_owns_site", "insurance_cover"]  # listed as ignored
     assert result["can_generate"]  # no effect on the result
 
 
@@ -179,11 +182,11 @@ def test_floats_inside_milestones_are_refused(knowledge):
 # ---------------------------------------------------------------------------
 
 def test_valid_project_has_no_errors(knowledge):
-    """The P1-like project: no errors, three clauses, only W_CONSUMER."""
+    """The P1-like project (handoff E1): no errors, six clauses, only W_CONSUMER."""
     result = run(knowledge)  # nothing changed
     assert result["errors"] == []  # no error
     assert result["can_generate"] is True  # "Generate" allowed
-    assert clause_ids(result) == ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]  # price, payment, termination
+    assert clause_ids(result) == ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "ACCEPTANCE_PROTOCOL", "DEFECTS_STANDARD", "LIABILITY_LAW", "TERMINATION_LAW"]  # price, payment, termination
     assert rule_ids(result["warnings"]) == ["W_CONSUMER"]  # only the consumer warning
 
 
@@ -382,10 +385,10 @@ def test_w_consumer_always_shown_also_with_errors(knowledge):
 @pytest.mark.parametrize(  # the four combinations of price type and payment type
     "price_type, payment_type, expected",  # names of the three values
     [  # the cases
-        ("fixed", "on_completion", ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_ON_COMPLETION
-        ("fixed", "milestones", ["PRICE_FIXED", "PAYMENT_MILESTONE", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_MILESTONE
-        ("estimate", "on_completion", ["PRICE_ESTIMATE", "PAYMENT_ON_COMPLETION", "TERMINATION_LAW"]),  # SEL_PRICE_ESTIMATE + ...
-        ("estimate", "milestones", ["PRICE_ESTIMATE", "PAYMENT_MILESTONE", "TERMINATION_LAW"]),  # both "other" variants
+        ("fixed", "on_completion", ["PRICE_FIXED", "PAYMENT_ON_COMPLETION", "ACCEPTANCE_PROTOCOL", "DEFECTS_STANDARD", "LIABILITY_LAW", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_ON_COMPLETION
+        ("fixed", "milestones", ["PRICE_FIXED", "PAYMENT_MILESTONE", "ACCEPTANCE_PROTOCOL", "DEFECTS_STANDARD", "LIABILITY_LAW", "TERMINATION_LAW"]),  # SEL_PRICE_FIXED + SEL_PAYMENT_MILESTONE
+        ("estimate", "on_completion", ["PRICE_ESTIMATE", "PAYMENT_ON_COMPLETION", "ACCEPTANCE_PROTOCOL", "DEFECTS_STANDARD", "LIABILITY_LAW", "TERMINATION_LAW"]),  # SEL_PRICE_ESTIMATE + ...
+        ("estimate", "milestones", ["PRICE_ESTIMATE", "PAYMENT_MILESTONE", "ACCEPTANCE_PROTOCOL", "DEFECTS_STANDARD", "LIABILITY_LAW", "TERMINATION_LAW"]),  # both "other" variants
     ],  # end of the cases
 )  # end of parametrize
 def test_sel_rules_select_one_price_and_one_payment_clause(knowledge, price_type, payment_type, expected):
@@ -530,9 +533,9 @@ def with_grounds(knowledge, **changes):
 
 def test_no_special_grounds_selects_termination_law(knowledge):
     """termination_reasons = false: the statutory baseline, without any gap (App. C, E1)."""
-    record = run(knowledge)["selected_clauses"][2]  # the third clause
+    record = run(knowledge)["selected_clauses"][-1]  # the last clause
     assert record["clause_id"] == "TERMINATION_LAW" and record["selection_rule_id"] == "SEL_TERMINATION_LAW"  # clause and rule
-    assert record["slot"] == "termination_clause" and record["position"] == 3  # after price and payment
+    assert record["slot"] == "termination_clause" and record["position"] == 6  # the last of the six clauses
     assert record["text"].startswith("Before the Works are complete, the Client may terminate under Article 377 CO")  # App. D
     assert "{" not in record["text"]  # no gap left
 
@@ -541,7 +544,7 @@ def test_special_grounds_select_termination_for_cause(knowledge):
     """termination_reasons = true: the clause with the selected ground and the cure period (E7)."""
     result = with_grounds(knowledge)  # a valid project with one ground
     assert result["can_generate"] is True  # "Generate" allowed
-    record = result["selected_clauses"][2]  # the third clause
+    record = result["selected_clauses"][-1]  # the last clause
     assert record["clause_id"] == "TERMINATION_FOR_CAUSE"  # App. C
     assert "material breaches: the Client’s material failure to pay an amount properly due, subject to lawful payment defences." in record["text"]  # App. D
     assert "allow at least 30 calendar days after receipt to cure" in record["text"]  # the period
@@ -551,7 +554,7 @@ def test_special_grounds_select_termination_for_cause(knowledge):
 def test_both_grounds_are_joined_in_a_fixed_order(knowledge):
     """Two grounds: App. D phrases joined by "; ", independent of the order of the answers."""
     reasons = ["client_material_nonpayment", "contractor_material_nonperformance"]  # selected in the "wrong" order
-    text = with_grounds(knowledge, selected_termination_reasons=reasons)["selected_clauses"][2]["text"]  # the clause
+    text = with_grounds(knowledge, selected_termination_reasons=reasons)["selected_clauses"][-1]["text"]  # the clause
     assert ("the Contractor’s material failure to perform the agreed Works; "  # first the Contractor's ground
             "the Client’s material failure to pay an amount properly due, subject to lawful payment defences.") in text  # then the Client's
 
@@ -598,7 +601,7 @@ def test_stale_grounds_are_ignored(knowledge):
     result = run(knowledge, termination_reasons=False, selected_termination_reasons=["client_material_nonpayment"],  # old ground
                  cure_period_days=0)  # old invalid period
     assert result["can_generate"] is True  # no R_TERM
-    assert clause_ids(result)[2] == "TERMINATION_LAW"  # still the statutory baseline
+    assert clause_ids(result)[-1] == "TERMINATION_LAW"  # still the statutory baseline
     assert set(result["ignored_fields"]) == {"selected_termination_reasons", "cure_period_days"}  # listed as ignored
     assert "W_CURE" not in rule_ids(result["warnings"])  # no special grounds, no cure warning
 
@@ -629,8 +632,8 @@ def test_r_cross_no_termination_clause(knowledge):
 
 def test_court_decision_of_the_termination_clauses(knowledge):
     """Both clauses reserve the same articles, so both show the same legal basis, ending with BGE 117 II 273."""
-    law = run(knowledge)["selected_clauses"][2]["citations"]  # citations of TERMINATION_LAW
-    cause = with_grounds(knowledge)["selected_clauses"][2]["citations"]  # citations of TERMINATION_FOR_CAUSE
+    law = run(knowledge)["selected_clauses"][-1]["citations"]  # citations of TERMINATION_LAW
+    cause = with_grounds(knowledge)["selected_clauses"][-1]["citations"]  # citations of TERMINATION_FOR_CAUSE
     assert [c["citation_id"] for c in law] == ["CO_377", "CO_107_TO_109", "CO_366_1", "CO_373_2", "CO_375", "CO_376",  # the articles
                                                "CO_378", "CO_379", "BGE_117_II_273"]  # and the decision
     assert cause == law  # the same list, because the clause text reserves the same articles
@@ -641,14 +644,14 @@ def test_court_decision_of_the_termination_clauses(knowledge):
 def test_warnings_of_the_topic_are_in_the_review_record(knowledge):
     """A review record lists the warnings of its own topic only (D28)."""
     result = with_grounds(knowledge, price_type="estimate", estimate_basis="Hourly rate")  # both topics warn
-    price, _, termination = result["selected_clauses"]  # the three records
+    price, termination = result["selected_clauses"][0], result["selected_clauses"][-1]  # the first and the last record
     assert price["warnings"] == ["W_PRICE"]  # topic 1
     assert termination["warnings"] == ["W_CURE"]  # topic 5
 
 
 def test_input_values_of_termination_for_cause(knowledge):
     """The review record stores the answers the clause used (App. C "actual input values")."""
-    record = with_grounds(knowledge)["selected_clauses"][2]  # TERMINATION_FOR_CAUSE
+    record = with_grounds(knowledge)["selected_clauses"][-1]  # TERMINATION_FOR_CAUSE
     assert record["input_values"] == {"selected_termination_reasons": ["client_material_nonpayment"], "cure_period_days": 30}  # the answers
 
 
@@ -658,3 +661,169 @@ def test_review_record_text_is_filled(knowledge):
     price_text = result["selected_clauses"][0]["text"]  # the PRICE_FIXED text
     assert price_text.startswith("The fixed price for the Works is CHF 100,000.00. This amount includes applicable VAT.")  # filled
     assert "{" not in price_text  # no gap left
+
+
+# ---------------------------------------------------------------------------
+# 13. Topics 2-4: completion date and delay penalty, acceptance and defects, liability
+# ---------------------------------------------------------------------------
+
+def with_penalty(knowledge, **changes):
+    """Evaluate a valid project with a binding date and a capped penalty (handoff E2), with some answers changed."""
+    penalty = {"completion_date": date(2027, 6, 30), "completion_definition": "All agreed Works ready for handover",  # binding date
+               "delay_penalty": True, "penalty_amount": Decimal("700"), "penalty_period": "week",  # CHF 700 per week
+               "penalty_cap": Decimal("5")}  # maximum 5 %
+    return run(knowledge, **{**penalty, **changes})  # the penalty answers, overwritten by the changes
+
+
+def record_of(result, clause_id):
+    """Return the review record of one selected clause."""
+    return next(record for record in result["selected_clauses"] if record["clause_id"] == clause_id)  # the first match
+
+
+def citation_ids(result, clause_id):
+    """Return the citation IDs of one selected clause."""
+    return [citation["citation_id"] for citation in record_of(result, clause_id)["citations"]]  # in YAML order
+
+
+def test_e1_has_acceptance_defects_and_statutory_liability(knowledge):
+    """E1: no date and no penalty, so section 6 stays empty; the defects clause names the notice contact."""
+    result = run(knowledge)  # the valid project
+    assert "DEADLINE_FIXED" not in clause_ids(result)  # no binding date
+    assert not any(clause_id.startswith("PENALTY_") for clause_id in clause_ids(result))  # no penalty
+    assert "be sent to Bau AG, Werkweg 5, 3000 Bern;" in record_of(result, "DEFECTS_STANDARD")["text"]  # contact filled
+
+
+def test_e2_capped_penalty(knowledge):
+    """E2: CHF 700 per week, maximum 5 %: DEADLINE_FIXED and PENALTY_CAPPED; the base is the fixed price."""
+    result = with_penalty(knowledge)  # E2
+    assert result["can_generate"] is True  # no error
+    assert clause_ids(result)[2:4] == ["DEADLINE_FIXED", "PENALTY_CAPPED"]  # right after price and payment
+    text = record_of(result, "PENALTY_CAPPED")["text"]  # the filled clause
+    assert "by 30 June 2027, as validly extended" in text  # the date
+    assert "CHF 700.00 per calendar week of delay" in text  # amount and penalty_period_text
+    assert "limited to 5% of the agreed base of CHF 100,000.00" in text  # App. B: base derived from the contract price
+    assert "{" not in text  # no gap left
+    assert rule_ids(result["warnings"]) == ["W_CONSUMER"]  # a maximum is set, so no W_PEN
+
+
+def test_penalty_day_rate(knowledge):
+    """A day rate prints "calendar day" (App. D penalty_period_text)."""
+    text = record_of(with_penalty(knowledge, penalty_period="day", penalty_amount=Decimal("150")), "PENALTY_CAPPED")["text"]  # day
+    assert "CHF 150.00 per calendar day of delay" in text  # amount and period
+
+
+def test_uncapped_penalty_gives_w_pen(knowledge):
+    """No maximum: PENALTY_UNCAPPED and W_PEN with CO 163 and BGE 114 II 264 (App. C)."""
+    result = with_penalty(knowledge, penalty_cap=None)  # no maximum
+    assert "No contractual maximum is agreed." in record_of(result, "PENALTY_UNCAPPED")["text"]  # App. D
+    warning = [w for w in result["warnings"] if w["rule_id"] == "W_PEN"]  # the W_PEN entries
+    assert [w["field"] for w in warning] == ["penalty_cap"]  # next to the maximum
+    assert warning[0]["citations"] == ["CO_163", "BGE_114_II_264"]  # legal basis
+    assert result["can_generate"] is True  # a warning does not block
+
+
+def test_e3_penalty_without_date_is_r_pen_01(knowledge):
+    """E3: a penalty without a date is R_PEN_01, labelled PRODUCT, not "Swiss law requires a written date"."""
+    result = with_penalty(knowledge, completion_date=None)  # no date
+    error = [e for e in result["errors"] if e["rule_id"] == "R_PEN_01"]  # the R_PEN_01 entries
+    assert [e["field"] for e in error] == ["completion_date"]  # next to the date
+    assert error[0]["category"] == "PRODUCT" and "not a statement that Swiss law requires" in error[0]["message"]  # E3
+    assert result["can_generate"] is False  # blocked
+
+
+@pytest.mark.parametrize(  # App. C R_PEN_02: amount, period, cap, base
+    "changes, expected",  # the changed answers and the fields R_PEN_02 must report
+    [  # the cases
+        ({"penalty_amount": None}, ["penalty_amount"]),  # no amount
+        ({"penalty_amount": Decimal("0")}, ["penalty_amount"]),  # amount 0
+        ({"penalty_period": None}, ["penalty_period"]),  # no period
+        ({"penalty_cap": Decimal("0")}, ["penalty_cap"]),  # App. B: 0 never means "uncapped"
+        ({"penalty_cap": Decimal("-1")}, ["penalty_cap"]),  # negative maximum
+        ({"price_type": "estimate", "estimate_basis": "Hourly rates"}, ["penalty_cap_basis_chf"]),  # capped estimate, no base
+        ({"price_type": "estimate", "estimate_basis": "Hourly rates", "penalty_cap_basis_chf": Decimal("0")},  # base 0
+         ["penalty_cap_basis_chf"]),  # reported at the base
+    ],  # end of the cases
+)  # end of parametrize
+def test_r_pen_02(knowledge, changes, expected):
+    """R_PEN_02 blocks at the right question; R_REQUIRED stays silent (D16)."""
+    result = with_penalty(knowledge, **changes)  # the changed answers
+    assert places(result["errors"], "R_PEN_02") == expected  # the right question
+    assert "R_REQUIRED" not in rule_ids(result["errors"])  # one problem = one error
+
+
+def test_capped_estimate_uses_its_own_base(knowledge):
+    """For an estimate the base is entered by the user (App. B)."""
+    result = with_penalty(knowledge, price_type="estimate", estimate_basis="Hourly rates",  # an estimate
+                          penalty_cap_basis_chf=Decimal("80000"))  # with its own base
+    assert result["can_generate"] is True  # no error
+    assert "limited to 5% of the agreed base of CHF 80,000.00" in record_of(result, "PENALTY_CAPPED")["text"]  # its base
+
+
+def test_date_without_penalty_selects_only_deadline_fixed(knowledge):
+    """A date without a penalty gives DEADLINE_FIXED only; old penalty answers are ignored (E8)."""
+    result = with_penalty(knowledge, delay_penalty=False)  # date, but no penalty
+    assert "DEADLINE_FIXED" in clause_ids(result)  # the date clause
+    assert not any(clause_id.startswith("PENALTY_") for clause_id in clause_ids(result))  # no penalty clause
+    assert set(result["ignored_fields"]) == {"penalty_amount", "penalty_period", "penalty_cap"}  # ignored
+
+
+def test_r_date_completion_before_contract_date(knowledge):
+    """App. C R_DATE: a completion date before the contract date (1 November 2026) is blocked."""
+    result = with_penalty(knowledge, completion_date=date(2026, 10, 1))  # a month before the contract
+    assert places(result["errors"], "R_DATE") == ["completion_date"]  # next to the date
+
+
+def test_r_date_allows_the_contract_date_itself(knowledge):
+    """The same day is not "before" the contract date."""
+    assert "R_DATE" not in rule_ids(with_penalty(knowledge, completion_date=date(2026, 11, 1))["errors"])  # same day
+
+
+def test_r_date_date_without_definition(knowledge):
+    """App. C R_DATE: a date without a completion definition is blocked by R_DATE, not R_REQUIRED (D16)."""
+    result = with_penalty(knowledge, completion_definition="")  # no definition
+    assert places(result["errors"], "R_DATE") == ["completion_definition"]  # next to the definition
+    assert "R_REQUIRED" not in rule_ids(result["errors"])  # one problem = one error
+
+
+@pytest.mark.parametrize("field", ["delay_penalty", "defect_notice_contact", "liability_limit"])  # App. B: always required
+def test_topic_2_to_4_questions_are_required(knowledge, field):
+    """An unanswered question of topics 2-4 gives R_REQUIRED at that question."""
+    assert places(run(knowledge, **{field: None})["errors"], "R_REQUIRED") == [field]  # reported where it is missing
+
+
+def test_liability_cap(knowledge):
+    """liability_limit = true: LIABILITY_CAP with the amount, its decisions, and W_LIAB (App. C)."""
+    result = run(knowledge, liability_limit=True, liability_cap_amount=Decimal("100000"))  # a cap of CHF 100,000
+    assert result["can_generate"] is True  # a warning does not block
+    assert "is limited to CHF 100,000.00." in record_of(result, "LIABILITY_CAP")["text"]  # the amount
+    assert citation_ids(result, "LIABILITY_CAP") == ["CO_100", "CO_101", "BGE_95_II_43", "BGER_4C_92_2007"]  # legal basis
+    warning = [w for w in result["warnings"] if w["rule_id"] == "W_LIAB"]  # the W_LIAB entries
+    assert [w["field"] for w in warning] == ["liability_limit"]  # next to the question
+    assert warning[0]["citations"] == ["CO_100", "UWG_8"]  # App. C: "CO 100(2); UWG 8"
+
+
+@pytest.mark.parametrize("amount", [None, Decimal("0"), Decimal("-100")])  # missing, zero, negative
+def test_r_liab_value(knowledge, amount):
+    """App. C R_LIAB_VALUE: a cap without a positive amount is blocked; W_LIAB is still shown (D18)."""
+    result = run(knowledge, liability_limit=True, liability_cap_amount=amount)  # the changed amount
+    assert places(result["errors"], "R_LIAB_VALUE") == ["liability_cap_amount"]  # next to the amount
+    assert "R_REQUIRED" not in rule_ids(result["errors"])  # one problem = one error (D16)
+    assert "W_LIAB" in rule_ids(result["warnings"])  # warnings are always computed
+
+
+def test_stale_cap_amount_is_ignored(knowledge):
+    """liability_limit = false: an old cap amount is ignored and there is no W_LIAB."""
+    result = run(knowledge, liability_limit=False, liability_cap_amount=Decimal("50000"))  # old amount
+    assert "LIABILITY_LAW" in clause_ids(result) and result["ignored_fields"] == ["liability_cap_amount"]  # ignored
+    assert "W_LIAB" not in rule_ids(result["warnings"])  # no cap, no warning
+
+
+def test_court_decisions_of_topics_2_to_4(knowledge):
+    """The decisions from the research documents are on the clauses they interpret."""
+    result = with_penalty(knowledge)  # date, capped penalty, statutory liability
+    assert citation_ids(result, "PENALTY_CAPPED")[-2:] == ["BGE_114_II_264", "BGE_97_II_350"]  # CO 163(3) and 160(2)
+    assert citation_ids(result, "ACCEPTANCE_PROTOCOL")[-1] == "BGE_97_II_350"  # acceptance and penalty reservation
+    assert citation_ids(result, "LIABILITY_LAW")[-1] == "BGE_95_II_43"  # auxiliary persons
+    assert citation_ids(result, "DEFECTS_STANDARD") == ["CO_366_2", "CO_367", "CO_368", "CO_369", "CO_370", "CO_371"]  # no decision
+    decision = record_of(result, "PENALTY_CAPPED")["citations"][-2]  # BGE 114 II 264
+    assert decision["source_id"] == "BGER" and decision["url"] == "https://www.servat.unibe.ch/dfr/bge/c2114264.html"  # its link

@@ -67,6 +67,7 @@ def p2_answers(price_type="fixed"):
              "invoice_due_days": 30, "advance": False},  # row 3
         ],  # end of the rows
         "selected_termination_reasons": ["client_material_nonpayment"],  # one termination ground
+        "penalty_period": "week",  # a weekly delay penalty
     }  # end of the answers
 
 
@@ -221,6 +222,32 @@ def test_build_values_for_termination_for_cause(knowledge):
     clause = knowledge["clauses"]["TERMINATION_FOR_CAUSE"]  # the clause
     answers = {"selected_termination_reasons": ["client_material_nonpayment"], "cure_period_days": 30}  # its answers
     assert build_values(clause, answers, knowledge) == {"termination_reason_text": CLIENT_GROUND, "cure_period_days": "30"}  # both gaps
+
+
+def test_penalty_period_text(knowledge):
+    """penalty_period_text uses the App. D wording for each answer."""
+    placeholder = knowledge["derived_placeholders"]["penalty_period_text"]  # its definition
+    assert build_derived(placeholder, {"penalty_period": "day"}) == "calendar day"  # day rate
+    assert build_derived(placeholder, {"penalty_period": "week"}) == "calendar week"  # week rate
+
+
+def penalty_answers(**changes):
+    """Answers for PENALTY_CAPPED like handoff E2, with some answers changed."""
+    answers = {"completion_date": date(2027, 6, 30), "penalty_amount": Decimal("700"), "penalty_period": "week",  # E2
+               "penalty_cap": Decimal("5"), "contract_price": Decimal("100000")}  # maximum 5 %, fixed price
+    return {**answers, **changes}  # the answers, overwritten by the changes
+
+
+def test_penalty_cap_base_comes_from_the_contract_price(knowledge):
+    """Without its own answer, the cap base takes the contract price ("default_from", App. B)."""
+    values = build_values(knowledge["clauses"]["PENALTY_CAPPED"], penalty_answers(), knowledge)  # no own base
+    assert values["penalty_cap_basis_chf"] == "100,000.00" and values["penalty_cap"] == "5"  # E2
+
+
+def test_own_penalty_cap_base_is_used_first(knowledge):
+    """An entered base (an estimate) is used instead of the contract price."""
+    values = build_values(knowledge["clauses"]["PENALTY_CAPPED"], penalty_answers(penalty_cap_basis_chf=Decimal("80000")), knowledge)  # own base
+    assert values["penalty_cap_basis_chf"] == "80,000.00"  # its own value
 
 
 def test_every_derived_placeholder_in_the_yaml_can_be_built(knowledge):

@@ -210,7 +210,9 @@ def build_values(clause, answers, knowledge):
     """Return the text for every placeholder of one clause, as {placeholder_name: text}.
 
     Placeholders whose answer is missing are left out, so fill_text() leaves them
-    in the text and the engine can report them under R_REQUIRED.
+    in the text and the engine can report them under R_REQUIRED. A field with
+    "default_from" (parameters.yaml) uses that other field's answer when it has none,
+    e.g. the penalty cap base of a fixed price is the contract price (App. B).
 
     Parameters:
         clause: the clause from clauses.yaml (its "inputs" lists the placeholders)
@@ -223,6 +225,9 @@ def build_values(clause, answers, knowledge):
     for name in clause["inputs"]:  # each placeholder the clause declares
         if name in knowledge["fields"]:  # a direct answer, e.g. contract_price
             answer = answers.get(name)  # the user's answer; None if missing
+            default_from = knowledge["fields"][name].get("default_from")  # optional: another field that fills the gap
+            if (answer is None or answer == "") and default_from:  # no own answer, but a field to take it from
+                answer = answers.get(default_from)  # e.g. the contract price as the penalty cap base
             if answer is not None and answer != "":  # only answered fields are filled
                 values[name] = format_value(knowledge["fields"][name], answer)  # the formatted text
         else:  # a derived placeholder (the data loader made sure there is no third kind)

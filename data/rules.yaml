@@ -119,6 +119,95 @@ rules:
                                               # total not 100, invalid due days, advance unanswered,
                                               # or an amount not positive after cent rounding
 
+  # --- R_DATE (App. C): completion date not usable -----------------------------
+  - id: R_DATE                                # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT"
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    citations: []                             # App. C names no statutory basis for this PRODUCT rule
+    message: "Enter a completion date on or after the contract date, and describe what must be ready by that date."  # team draft from App. C, NOT YET APPROVED
+    cases:
+      - when: {field: completion_date, op: is_filled}  # a completion date was entered
+        check: completion_before_contract_date  # App. C: "Date precedes contract_date" (compares two answers)
+      - when:                                 # App. C: "date has no completion_definition"
+          all:
+            - {field: completion_date, op: is_filled}
+            - {field: completion_definition, op: is_empty}
+        field: completion_definition          # message next to the definition
+
+  # --- R_PEN_01 (App. C, E3): penalty without a completion date ----------------
+  - id: R_PEN_01                              # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT clarity; CO 160"; E3: not "Swiss law requires a written date"
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    citations: [CO_160]                       # App. C basis: CO 160
+    message: "A delay penalty needs a binding completion date. This is a requirement of the prototype, not a statement that Swiss law requires a written date."  # team draft from App. C and E3, NOT YET APPROVED
+    cases:
+      - when:                                 # App. C: "Penalty true and date missing"
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - {field: completion_date, op: is_empty}
+        field: completion_date                # message next to the date
+
+  # --- R_PEN_02 (App. C): penalty details not usable ---------------------------
+  - id: R_PEN_02                              # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT"
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    citations: []                             # App. C names no statutory basis for this PRODUCT rule
+    message: "Enter a positive penalty amount and choose a day or week rate. A maximum must be above 0 (leave it empty for no maximum), and a capped penalty on an estimate needs a positive CHF base."  # team draft from App. C, NOT YET APPROVED
+    cases:
+      - when:                                 # App. C: "amount ≤ 0" (and a missing amount, D16)
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - any:
+                - {field: penalty_amount, op: is_empty}
+                - {field: penalty_amount, op: at_most, value: 0}
+        field: penalty_amount                 # message next to the amount
+      - when:                                 # App. C: "missing period"
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - {field: penalty_period, op: is_empty}
+        field: penalty_period                 # message next to the period
+      - when:                                 # App. C: "cap ≤ 0"; App. B: 0 never means "uncapped"
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - {field: penalty_cap, op: at_most, value: 0}
+        field: penalty_cap                    # message next to the maximum
+      - when:                                 # App. C: "capped estimate without positive cap basis"
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - {field: penalty_cap, op: is_filled}
+            - {field: price_type, op: equals, value: estimate}
+            - any:
+                - {field: penalty_cap_basis_chf, op: is_empty}
+                - {field: penalty_cap_basis_chf, op: at_most, value: 0}
+        field: penalty_cap_basis_chf          # message next to the base
+
+  # --- R_LIAB_VALUE (App. C): liability cap without a usable amount ------------
+  - id: R_LIAB_VALUE                          # rule ID from App. C
+    type: error                               # blocks "Generate"
+    step: 1                                   # engine step
+    category: PRODUCT                         # App. C basis: "PRODUCT"
+    topic: LIABILITY                          # topic 4
+    version: "1.0"                            # rule version
+    citations: []                             # App. C names no statutory basis for this PRODUCT rule
+    message: "Enter a positive CHF amount for the liability cap."  # team draft from App. C, NOT YET APPROVED
+    cases:
+      - when:                                 # App. C: "Cap selected but value missing/non-positive"
+          all:
+            - {field: liability_limit, op: equals, value: true}
+            - any:
+                - {field: liability_cap_amount, op: is_empty}
+                - {field: liability_cap_amount, op: at_most, value: 0}
+        field: liability_cap_amount           # message next to the amount
+
   # --- R_TERM (App. C): special termination grounds that are not usable ---------
   - id: R_TERM                                # rule ID from App. C
     type: error                               # blocks "Generate"
@@ -174,6 +263,35 @@ rules:
     cases:
       - when: {always: true}                  # every project (D19)
         field: null                           # not tied to one question
+
+  # --- W_PEN (App. C): delay penalty without a maximum -------------------------
+  - id: W_PEN                                 # rule ID from App. C
+    type: warning                             # informs only
+    step: 2                                   # engine step
+    category: LAW                             # team proposal: App. C names only statute, like W_CONSUMER; NOT YET APPROVED
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    citations: [CO_163, BGE_114_II_264]       # App. C: "CO 163(3)", plus the court decision on judicial reduction
+    message: "No contractual maximum is agreed for the delay penalty. A court can reduce an excessive penalty, but there is no statutory safe rate or percentage."  # team draft from App. C and note sheet 2, NOT YET APPROVED
+    cases:
+      - when:                                 # App. C: "Penalty true and cap null"
+          all:
+            - {field: delay_penalty, op: equals, value: true}
+            - {field: penalty_cap, op: is_empty}
+        field: penalty_cap                    # message next to the maximum
+
+  # --- W_LIAB (App. C): every liability cap needs a review ---------------------
+  - id: W_LIAB                                # rule ID from App. C
+    type: warning                             # informs only
+    step: 2                                   # engine step
+    category: LAW                             # team proposal: App. C names only statute, like W_CONSUMER; NOT YET APPROVED
+    topic: LIABILITY                          # topic 4
+    version: "1.0"                            # rule version
+    citations: [CO_100, UWG_8]                # App. C: "CO 100(2); UWG 8"
+    message: "The cap covers only contractual damages caused by the Contractor’s own slight negligence. Whether it is fair depends on the context and needs review against a private Client; this warning does not certify that the cap is enforceable."  # team draft from App. C and note sheet 4, NOT YET APPROVED
+    cases:
+      - when: {field: liability_limit, op: equals, value: true}  # App. C: "Any cap selected"
+        field: liability_limit                # message next to the question
 
   # --- W_CURE (App. C): the cure period must be reasonable --------------------
   - id: W_CURE                                # rule ID from App. C
@@ -233,6 +351,82 @@ rules:
     clause: PAYMENT_MILESTONE                 # clause added
     when: {field: payment_type, op: equals, value: milestones}  # App. C: payment_type = milestones
     reason: "You selected staged payments. PAYMENT_MILESTONE uses the agreed triggers and invoice periods, with final accounting appropriate to the selected price type."  # law packet Task 10
+
+  # --- SEL_DEADLINE_FIXED ------------------------------------------------------
+  - id: SEL_DEADLINE_FIXED                    # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    clause: DEADLINE_FIXED                    # clause added
+    when: {field: completion_date, op: is_filled}  # App. C: "completion_date present"
+    reason: "You entered a binding completion date. DEADLINE_FIXED states the date and what counts as completion; statutory defences and the cure-period rules stay reserved."  # team draft, NOT YET APPROVED
+
+  # --- SEL_PENALTY_CAPPED ------------------------------------------------------
+  - id: SEL_PENALTY_CAPPED                    # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    clause: PENALTY_CAPPED                    # clause added
+    when:                                     # App. C: "delay_penalty = true and penalty_cap present"
+      all:
+        - {field: delay_penalty, op: equals, value: true}
+        - {field: penalty_cap, op: is_filled}
+    reason: "You chose a delay penalty with a maximum. PENALTY_CAPPED applies CO 160–163 with the agreed rate and maximum; judicial reduction stays available."  # team draft, NOT YET APPROVED
+
+  # --- SEL_PENALTY_UNCAPPED ----------------------------------------------------
+  - id: SEL_PENALTY_UNCAPPED                  # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: COMPLETION_PENALTY                 # topic 2
+    version: "1.0"                            # rule version
+    clause: PENALTY_UNCAPPED                  # clause added
+    when:                                     # App. C: "delay_penalty = true and penalty_cap null"
+      all:
+        - {field: delay_penalty, op: equals, value: true}
+        - {field: penalty_cap, op: is_empty}
+    reason: "You chose a delay penalty without a maximum. PENALTY_UNCAPPED applies CO 160–163 with the agreed rate; judicial reduction stays available."  # team draft, NOT YET APPROVED
+
+  # --- SEL_ACCEPTANCE_PROTOCOL -------------------------------------------------
+  - id: SEL_ACCEPTANCE_PROTOCOL               # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: ACCEPTANCE_DEFECTS                 # topic 3
+    version: "1.0"                            # rule version
+    clause: ACCEPTANCE_PROTOCOL               # clause added
+    when: {always: true}                      # App. C: "Always include both"
+    reason: "Every contract in this prototype includes the acceptance protocol. It records the delivery date, defects and reservations without waiving mandatory rights."  # team draft, NOT YET APPROVED
+
+  # --- SEL_DEFECTS_STANDARD ----------------------------------------------------
+  - id: SEL_DEFECTS_STANDARD                  # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: ACCEPTANCE_DEFECTS                 # topic 3
+    version: "1.0"                            # rule version
+    clause: DEFECTS_STANDARD                  # clause added
+    when: {always: true}                      # App. C: "Always include both"
+    reason: "Every contract in this prototype includes the defects clause. It keeps the protected 60-day notice periods, free repair and the five-year limitation for building works."  # team draft, NOT YET APPROVED
+
+  # --- SEL_LIABILITY_LAW -------------------------------------------------------
+  - id: SEL_LIABILITY_LAW                     # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: LIABILITY                          # topic 4
+    version: "1.0"                            # rule version
+    clause: LIABILITY_LAW                     # clause added
+    when: {field: liability_limit, op: equals, value: false}  # App. C: liability_limit = false
+    reason: "You chose statutory liability. LIABILITY_LAW adds no contractual cap or exclusion; CO 97–101 apply."  # team draft, NOT YET APPROVED
+
+  # --- SEL_LIABILITY_CAP -------------------------------------------------------
+  - id: SEL_LIABILITY_CAP                     # rule ID
+    type: select                              # adds a clause
+    step: 3                                   # engine step
+    topic: LIABILITY                          # topic 4
+    version: "1.0"                            # rule version
+    clause: LIABILITY_CAP                     # clause added
+    when: {field: liability_limit, op: equals, value: true}  # App. C: liability_limit = true
+    reason: "You chose the narrow cap. LIABILITY_CAP limits only damages caused by the Contractor’s own slight negligence and keeps every exception that CO 100 requires or the product chooses."  # team draft, NOT YET APPROVED
 
   # --- SEL_TERMINATION_LAW -----------------------------------------------------
   - id: SEL_TERMINATION_LAW                   # rule ID

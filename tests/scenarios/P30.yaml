@@ -1,0 +1,18 @@
+# =============================================================================
+# P30.yaml - test scenario P30: no contact for defect notices
+# -----------------------------------------------------------------------------
+# Source: handoff App. B (defect_notice_contact: "Always; non-empty") and note sheet 3 ("PRODUCT error: missing notice contact").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P30                                       # scenario ID, same as the file name
+title: "Defect notice contact missing"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  defect_notice_contact: ""                   # not answered
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_REQUIRED]                        # a required field is missing
+  error_fields:                               # where the error is shown
+    R_REQUIRED: [defect_notice_contact]       # next to the question
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)

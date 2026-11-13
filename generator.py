@@ -124,7 +124,9 @@ def _build_context(gaps, result, answers, knowledge):
         if gap in knowledge["slots"]:  # a clause slot, e.g. price_clause
             if gap in slot_texts:  # a clause was selected for it
                 context[gap] = slot_texts[gap]  # the filled clause text
-            else:  # no clause for this slot
+            elif knowledge["slots"][gap]["min"] == 0:  # an optional slot, e.g. no binding date: no clause
+                context[gap] = ""  # stays empty (App. C: "No-penalty needs no extra clause")
+            else:  # a required slot without a clause
                 problems.append(f"no clause selected for {{{{ {gap} }}}}")  # remember it
         elif gap == HAS_ANNEXES:  # chooses the paragraph versions in sections 2, 3 and 13
             context[gap] = not is_empty(answers.get(ANNEX_FIELD))  # True if at least one annex is listed

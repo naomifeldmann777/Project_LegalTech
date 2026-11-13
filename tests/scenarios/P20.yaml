@@ -12,7 +12,7 @@ answers:                                      # what differs from base_project.y
   cure_period_days: 0                         # old invalid period
 expected:                                     # the result the engine must give
   can_generate: true                          # the old answers cause no error
-  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, TERMINATION_LAW]  # statutory baseline
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # statutory baseline
   errors: []                                  # no R_TERM
   warnings: [W_CONSUMER]                      # no W_CURE
   ignored_fields: [selected_termination_reasons, cure_period_days]  # listed as ignored

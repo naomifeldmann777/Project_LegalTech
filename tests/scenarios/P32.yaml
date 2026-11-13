@@ -1,0 +1,18 @@
+# =============================================================================
+# P32.yaml - test scenario P32: liability cap without an amount
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (R_LIAB_VALUE: "Cap selected but value missing/non-positive"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P32                                       # scenario ID, same as the file name
+title: "Liability cap without amount"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  liability_limit: true                       # the narrow cap, but no amount
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_LIAB_VALUE]                      # App. C, not R_REQUIRED (D16)
+  error_fields:                               # where the error is shown
+    R_LIAB_VALUE: [liability_cap_amount]      # next to the amount
+  warnings: [W_CONSUMER, W_LIAB]              # still shown (Q6)

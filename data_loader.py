@@ -369,6 +369,9 @@ def _check_parameters(knowledge, problems):
         checked_by = field.get("checked_by")  # rule that reports this field instead of R_REQUIRED (D16)
         if checked_by is not None and checked_by not in knowledge["rules"]:  # must be a known rule
             problems.append(f"{where}: checked_by '{checked_by}' is not a rule in rules.yaml")  # report it
+        default_from = field.get("default_from")  # optional: the field whose answer fills the gap when this one has none
+        if default_from is not None and default_from not in knowledge["fields"]:  # must be a known field
+            problems.append(f"{where}: default_from '{default_from}' is not a field in parameters.yaml")  # report it
         depends_on = field.get("question_depends_on")  # optional: the question text changes with another answer
         if depends_on is not None:  # this field uses question variants
             allowed = _allowed_values(knowledge, depends_on)  # the answers of the other field

@@ -1,0 +1,25 @@
+# =============================================================================
+# P22.yaml - test scenario P22: binding date and a capped delay penalty (= handoff E2)
+# -----------------------------------------------------------------------------
+# Source: handoff App. E (E2: "Add DEADLINE_FIXED and PENALTY_CAPPED; derive cap basis CHF 100,000").
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P22                                       # scenario ID, same as the file name
+title: "Binding date and capped delay penalty"  # short description for the test report
+answers:                                      # what differs from base_project.yaml
+  completion_date: 2027-06-30                 # binding completion date
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+  delay_penalty: true                         # penalty for attributable delay
+  penalty_amount: "700"                       # CHF 700 ...
+  penalty_period: week                        # ... per week
+  penalty_cap: "5"                            # maximum 5 %
+expected:                                     # the result the engine must give
+  can_generate: true                          # no error
+  clauses: [PRICE_FIXED, PAYMENT_ON_COMPLETION, DEADLINE_FIXED, PENALTY_CAPPED, ACCEPTANCE_PROTOCOL, DEFECTS_STANDARD, LIABILITY_LAW, TERMINATION_LAW]  # E2
+  errors: []                                  # no errors
+  warnings: [W_CONSUMER]                      # a maximum is set, so no W_PEN
+  contract_text_contains:                     # texts that must appear in the filled clauses
+    - "ready for delivery by 30 June 2027"
+    - "CHF 700.00 per calendar week of delay"
+    - "limited to 5% of the agreed base of CHF 100,000.00"

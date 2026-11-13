@@ -1,0 +1,19 @@
+# =============================================================================
+# P28.yaml - test scenario P28: completion date before the contract date
+# -----------------------------------------------------------------------------
+# Source: handoff App. C (R_DATE: "Date precedes contract_date"). Warnings with errors: decision Q6.
+# Expected result: NOT YET CONFIRMED by the law student (open item L11).
+# =============================================================================
+
+id: P28                                       # scenario ID, same as the file name
+title: "Completion date before contract date"  # short description for the test report
+answers:                                      # what differs from base_project.yaml (contract date 1 November 2026)
+  completion_date: 2026-10-01                 # a month before the contract
+  completion_definition: "All agreed Works finished and ready for handover"  # what must be ready
+expected:                                     # the result the engine must give
+  can_generate: false                         # blocked
+  clauses: []                                 # no clauses (D17)
+  errors: [R_DATE]                            # App. C
+  error_fields:                               # where the error is shown
+    R_DATE: [completion_date]                 # next to the date
+  warnings: [W_CONSUMER]                      # consumer warning (Q6)
