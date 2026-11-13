@@ -44,7 +44,11 @@ answer at once, a missing answer once you have left its step. The last step, **C
 review**, lists all errors per step with a **Go to this step** button; without errors it
 shows **Download contract (Word)** and the **annotated contract**: the generated contract
 like a sheet of paper, with every clause chosen by the rules highlighted and a **Why …?**
-button that shows the answers it is based on, the reason and the legal basis.
+button that shows the answers it is based on, the reason and the legal basis. The tab
+**Legal sources** lists every article and court decision the contract relies on; **Check on
+Fedlex** loads the official text of each article from the federal law database and shows
+whether it still reads the same today as in the version the contract is based on (needs an
+internet connection; only the law's ID is sent, never any answers).
 Stop the app with `Ctrl+C`.
 
 After changing a YAML file in `data/`, restart the app (the files are loaded once).
@@ -77,6 +81,7 @@ engine.py                  rule engine: answers in -> errors, warnings, selected
 checks.py                  the 5 special checks that rules.yaml refers to by name
 placeholders.py            fills the {placeholders} of a clause; CHF / date formats; milestone rounding
 generator.py               fills the Word template and returns the contract as bytes
+law_check.py               checks on Fedlex whether the cited articles still read the same today
 data_loader.py             reads the 4 YAML files and checks them for mistakes
 data/
   sources.yaml             legal sources (S1, S2, S4, BGER) and citations: articles and court decisions
@@ -92,6 +97,7 @@ tests/
   test_engine.py           at least one test per rule, the conditions, the review records
   test_scenarios.py        runs every scenario file through the engine
   test_generator.py        real Word contracts for P1 and P2; refusal on errors
+  test_law_check.py        the Fedlex check with example law texts (runs without internet)
   scenarios/               base_project.yaml + P1.yaml ... P33.yaml (expected results)
 .streamlit/config.toml     colours of the app
 requirements.txt           pinned library versions

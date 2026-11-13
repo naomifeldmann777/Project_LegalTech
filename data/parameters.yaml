@@ -35,6 +35,8 @@
 # -----------------------------------------------------------------------------
 # Each section is one step of the app. "intro" is the short sentence shown under the
 # step's heading (optional key; team drafts, describing the step, not the law).
+# "explanation" (optional) is a longer text for the Contractor, shown in a blue info box
+# at the top of the step (wording from the legal documents, marked as draft where it is one).
 sections:
   - id: scope                                 # section ID; the fields below point to it
     title: "Scope check"                      # heading shown in the app (diagrams PDF ch. 1, step 1)
@@ -51,6 +53,14 @@ sections:
   - id: acceptance_defects                    # topic 3
     title: "Acceptance and defects"           # topic name from handoff note sheet 3
     intro: "Where the Client sends defect notices. The protected defect rules are fixed and cannot be changed here."
+    # "Explanation shown to the Contractor (draft)" from the legal documents, word for word; NOT YET APPROVED
+    explanation: >-
+      For building works the law fixes three points that this contract cannot change: the Client has
+      60 days to notify defects, you must repair defects free of charge unless the cost is excessive,
+      and defect claims run for five years from acceptance. Record the handover date and all visible
+      defects in the protocol. If a notice reaches you late, you must object yourself. A defect caused
+      by the Client's instructions is his risk only if you warned him expressly, so give such warnings
+      in writing.
   - id: liability                             # topic 4
     title: "Liability"                        # topic name from handoff note sheet 4
     intro: "Statutory liability, or a narrow cap for the Contractor’s own slight negligence."
